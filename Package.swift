@@ -28,15 +28,34 @@ let package = Package(
         .target(
             name: "WPRemoteData",
             dependencies: [
-              // The product name you need. In this example, FirebaseAuth.
-              //.product(name: "FirebaseCore", package: "Firebase"),
-                //.product(name: "FirebaseAuth", package: "Firebase"),
-              .product(name: "FirebaseFirestore", package: "Firebase"),
-              .product(name: "FirebaseStorage", package: "Firebase"),
-              .product(name: "FirebaseFunctions", package: "Firebase"),
-                .product(name: "PromiseKit", package: "PromiseKit"),
-                .product(name: "ReactiveSwift", package: "ReactiveSwift"),
-                .product(name: "SPCommon3", package: "SPCommon3")
+                .product(
+                    name: "FirebaseAuth",
+                    package: "Firebase"
+                ),
+                .product(
+                    name: "FirebaseFirestore",
+                    package: "Firebase"
+                ),
+                .product(
+                    name: "FirebaseStorage",
+                    package: "Firebase"
+                ),
+                .product(
+                    name: "FirebaseFunctions",
+                    package: "Firebase"
+                ),
+                .product(
+                    name: "PromiseKit",
+                    package: "PromiseKit"
+                ),
+                .product(
+                    name: "ReactiveSwift",
+                    package: "ReactiveSwift"
+                ),
+                .product(
+                    name: "SPCommon3",
+                    package: "SPCommon3"
+                )
             ]
         ),
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.

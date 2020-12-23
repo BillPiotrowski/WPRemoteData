@@ -5,7 +5,7 @@
 //  Created by William Piotrowski on 6/30/20.
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
-/*
+
 import Firebase
 import FirebaseAuth
 
@@ -19,4 +19,4 @@ extension ServerUser {
     }
 }
 
-*/
+

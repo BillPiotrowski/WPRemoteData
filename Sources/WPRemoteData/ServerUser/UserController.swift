@@ -5,7 +5,7 @@
 //  Created by William Piotrowski on 6/30/20.
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
-/*
+
 import UIKit
 import Firebase
 import FirebaseAuth
@@ -17,29 +17,31 @@ import PromiseKit
 // REMOVE SINGLETON
 public typealias ServerAuth = Auth
 public typealias ServerEmailAuth = EmailAuthProvider
-
 public class UserController: NSObject {
-    private var authUI: FUIAuth?
+    //private var authUI: FUIAuth?
     
     public let userSignal: Signal<ServerUser?, Error>
     private let userInput: Signal<ServerUser?, Error>.Observer
-    //let progressProperty: Property<Double>
+
     
     public override init(){
         let signal = Signal<ServerUser?, Error>.pipe()
         
-        self.authUI = FUIAuth.defaultAuthUI()
+        
+        //self.authUI = FUIAuth.defaultAuthUI()
         
         self.userInput = signal.input
         self.userSignal = signal.output
         super.init()
         
-        let providers: [FUIAuthProvider] = [
-        ]
-        authUI?.providers = providers
-        authUI?.delegate = self
+//        let providers: [FUIAuthProvider] = [
+//        ]
+        //authUI?.providers = providers
+        //authUI?.delegate = self
         
-        Auth.auth().addStateDidChangeListener(self.userSateChangeHandler)
+        Auth.auth().addStateDidChangeListener(
+            self.userSateChangeHandler
+        )
         
     }
     func userSateChangeHandler(_ firebaseAuth: Auth, firebaseUser: User?){
@@ -53,7 +55,9 @@ public class UserController: NSObject {
     }
 }
 
+
 extension UserController {
+    /*
     public func createLoginVC() -> UINavigationController {
         guard let authUI = authUI else {
            fatalError("Firebase AUTH UI does not exist.")
@@ -77,9 +81,11 @@ extension UserController {
         let vc = authUI.authViewController()
         return vc
     }
+ */
 }
 
-extension UserController: FUIAuthDelegate {
+extension UserController /*: FUIAuthDelegate*/ {
+    /*
     public func authUI(
         _ authUI: FUIAuth,
         didSignInWith user: User?,
@@ -99,12 +105,12 @@ extension UserController: FUIAuthDelegate {
             userInput.send(error: error)
         }
     }
+ */
     public func logout(){
-        //userController!.logout()
-        try! FUIAuth.defaultAuthUI()!.signOut()
+        try? Auth.auth().signOut()
+        //try! FUIAuth.defaultAuthUI()!.signOut()
     }
 }
-
 
 
 extension UserController {
@@ -188,4 +194,4 @@ public struct ReauthUser {
     internal let authDataResult: AuthDataResult
 }
 
- */
+ 
