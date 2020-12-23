@@ -114,6 +114,32 @@ extension UserController /*: FUIAuthDelegate*/ {
 
 
 extension UserController {
+    
+    public static func login(
+        with email: String,
+        password: String
+    ) -> Promise<Void> {
+        return Promise { seal in
+            ServerAuth.auth().signIn(
+                withEmail: email,
+                password: password,
+                completion: { (result,error)  in
+                    guard result != nil
+                    else {
+                        let error = error ?? NSError(
+                            domain: "No response from login server, but no error provided.",
+                            code: 24,
+                            userInfo: nil
+                        )
+                        seal.reject(error)
+                        return
+                    }
+                    seal.fulfill(())
+            })
+        }
+    }
+    
+    
     public static func reauthenticate(
         password: String
     ) -> Promise<ReauthUser>{
