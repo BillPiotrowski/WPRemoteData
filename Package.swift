@@ -17,7 +17,7 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "Firebase", url: "https://github.com/firebase/firebase-ios-sdk.git", .branch("7.0-spm-beta")),
-        .package(url: "https://github.com/mxcl/PromiseKit", from: "6.8.0"),
+        .package(url: "https://github.com/mxcl/PromiseKit", from: "6.0.0"),
         .package(name: "ReactiveSwift", url: "https://github.com/ReactiveCocoa/ReactiveSwift.git", from: "6.1.0"),
         .package(
             url: "https://github.com/BillPiotrowski/SPCommon3.git",
