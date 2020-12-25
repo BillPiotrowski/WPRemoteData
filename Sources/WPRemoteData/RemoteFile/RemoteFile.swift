@@ -8,7 +8,7 @@
 
 import Foundation
 import FirebaseStorage
-import SPCommon3
+import SPCommon
 
 /*
 public protocol RemoteFileProtocol: RemoteDownloadable {

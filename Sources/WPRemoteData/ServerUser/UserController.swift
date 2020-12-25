@@ -11,7 +11,7 @@ import Firebase
 import FirebaseAuth
 //import FirebaseUI
 import ReactiveSwift
-import SPCommon3
+import SPCommon
 import PromiseKit
 
 // REMOVE SINGLETON

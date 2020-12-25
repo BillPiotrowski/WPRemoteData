@@ -11,7 +11,7 @@
 
 /*
 import Foundation
-import SPCommon3
+import SPCommon
 
 // MARK: GET WILDCARDS
 extension RemoteDataLocation {

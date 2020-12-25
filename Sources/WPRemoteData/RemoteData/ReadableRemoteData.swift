@@ -9,7 +9,7 @@
 import PromiseKit
 import ReactiveSwift
 import Firebase
-import SPCommon3
+import SPCommon
 
 public protocol ReadableRemoteData: ReadableData, WriteableData, RemoteData {
     init(remoteDataDocument: RemoteDataDocument) throws

@@ -6,7 +6,7 @@
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
 
-import SPCommon3
+import SPCommon
 
 public enum RemoteDataError: ScorepioError {
     case couldNotConvertToSelf(type: ReadableRemoteData.Type)

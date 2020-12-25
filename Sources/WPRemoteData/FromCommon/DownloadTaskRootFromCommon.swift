@@ -8,7 +8,7 @@
 
 import Foundation
 import ReactiveSwift
-import SPCommon3
+import SPCommon
 
 open class DownloadTaskRoot: DownloadTaskProtocol {
     public let uid: String

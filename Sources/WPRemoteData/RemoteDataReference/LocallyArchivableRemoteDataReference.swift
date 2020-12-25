@@ -7,7 +7,7 @@
 //
 
 import PromiseKit
-import SPCommon3
+import SPCommon
 
 
 public protocol LocallyArchivableRemoteDataReference: RemoteDataReference, RemoteDownloadable {

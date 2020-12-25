@@ -6,7 +6,7 @@
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
 
-import SPCommon3
+import SPCommon
 import FirebaseStorage
 
 public class RemoteFileDownloadTask: DownloadTaskRoot {

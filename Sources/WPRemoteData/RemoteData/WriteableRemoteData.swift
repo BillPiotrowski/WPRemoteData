@@ -8,7 +8,7 @@
 
 import Foundation
 import PromiseKit
-import SPCommon3
+import SPCommon
 import Firebase
 
 public protocol WriteableRemoteData: WriteableData, RemoteData {

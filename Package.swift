@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/mxcl/PromiseKit", from: "6.0.0"),
         .package(name: "ReactiveSwift", url: "https://github.com/ReactiveCocoa/ReactiveSwift.git", from: "6.1.0"),
         .package(
-            url: "https://github.com/BillPiotrowski/SPCommon3.git",
+            url: "https://github.com/BillPiotrowski/SPCommon.git",
             from: "0.1.0"
         )
     ],
@@ -53,8 +53,8 @@ let package = Package(
                     package: "ReactiveSwift"
                 ),
                 .product(
-                    name: "SPCommon3",
-                    package: "SPCommon3"
+                    name: "SPCommon",
+                    package: "SPCommon"
                 )
             ]
         ),

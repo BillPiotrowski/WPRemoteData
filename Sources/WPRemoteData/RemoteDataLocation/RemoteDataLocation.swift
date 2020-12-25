@@ -6,8 +6,8 @@
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
 
-import SPCommon3
-import SPCommon3
+import SPCommon
+import SPCommon
 
 
 // RENAME TO REMOTE DATA LOCATION?

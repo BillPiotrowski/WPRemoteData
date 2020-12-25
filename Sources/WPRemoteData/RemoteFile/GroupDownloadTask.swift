@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import SPCommon3
+import SPCommon
 
 public class GroupDownloadTask: DownloadTaskRoot {
     private let downloadTasks: [DownloadTaskProtocol]

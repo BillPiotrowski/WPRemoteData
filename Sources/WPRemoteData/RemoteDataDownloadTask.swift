@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import SPCommon3
+import SPCommon
 
 public class RemoteDataDownloadTask: DownloadTaskRoot {
     let remoteData: LocallyArchivableRemoteDataReference

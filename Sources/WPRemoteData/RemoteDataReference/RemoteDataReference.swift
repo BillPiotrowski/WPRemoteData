@@ -6,7 +6,7 @@
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
 
-import SPCommon3
+import SPCommon
 
 public protocol RemoteDataReferenceKnownType: RemoteDataReference {
     var readableRemoteDataType: ReadableRemoteData.Type { get }
