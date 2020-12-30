@@ -115,6 +115,46 @@ extension UserController /*: FUIAuthDelegate*/ {
 
 extension UserController {
     
+    /// Initiates a password reset for the given email address. There are other options that can be explored here as well.
+    public static func resetPassword(
+        with emailAddress: String
+    ) -> Promise<Void> {
+        return Promise { seal in
+            ServerAuth.auth().sendPasswordReset(
+                withEmail: emailAddress
+            ){ error in
+                guard let error = error
+                else {
+                    seal.fulfill(())
+                    return
+                }
+                seal.reject(error)
+            }
+        }
+    }
+    
+    public static func createUser(
+        from emailAddress: String,
+        password: String
+    ) -> Promise<Void> {
+        return Promise { seal in
+            ServerAuth.auth().createUser(
+                withEmail: emailAddress,
+                password: password
+            ){ (authDataResult, error) in
+                guard authDataResult != nil else {
+                    let error = error ?? NSError(
+                        domain: "Unknown error signing in.",
+                        code: 1
+                    )
+                    seal.reject(error)
+                    return
+                }
+                seal.fulfill(())
+            }
+        }
+    }
+    
     public static func login(
         with email: String,
         password: String
