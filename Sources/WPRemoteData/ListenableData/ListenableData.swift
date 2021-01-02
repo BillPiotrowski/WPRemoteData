@@ -71,6 +71,7 @@ extension ListenableRemoteData {
         )
     }
     
+    /// Returns a Signal and ListenerDisposable. The disposable is for the server listener and is different from ReactiveSwift Disposables.
     public typealias RemoteDataListener = (
         observer: Signal<Self, Error>,
         disposable: ListenerDisposable

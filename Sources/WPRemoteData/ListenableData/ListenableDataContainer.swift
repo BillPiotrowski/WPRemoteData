@@ -10,85 +10,72 @@ import ReactiveSwift
 
 public class ListenableDataContainer<T: ListenableRemoteData> {
     private static var savingType: SavingType { return .server }
+    private let savingType: SavingType
     private let userPipe: Signal<T, Never>.Observer
-    private let mergedProperty: Property<ListenableDataReturn<T>>
+    private let mergedProperty: Property<T>
+    // Different from ReactiveSwift Disposable.
     weak private var disposable: ListenerDisposable?
     
-    public init(initialData: T){
+    public init(
+        initialData: T,
+        forTesting: Bool? = nil
+    ){
+        let forTesting = forTesting ?? false
+        let savingType = forTesting ? SavingType.local : SavingType.server
+        
+        // CREATE MERGED PIPE TO SERVER AND USER SIGNALS
+        let mergedPipe = Signal<Signal<ListenableDataReturnItem<T>, Never>, Never>.pipe()
+        let flattenedSignal: Signal<ListenableDataReturnItem<T>, Never> = mergedPipe.output.flatten(.merge)
         
         
-        let ServerPipe = Signal<ListenableDataReturnItem<T>, Never>.pipe()
         let userPipe = Signal<T, Never>.pipe()
-        let rawServerResponse = initialData.remoteAddListenerNoError()
         
-        // ADD fromDatabaseListener: false TO USER SIGNAL
-        let formattedUserSignal: Signal<ListenableDataReturnItem<T>, Never> = userPipe.output.map { data in
-            return (newData: data, fromDatabaseListener: false)
-        }
-            
-        // MANUALLY FILTERING AND CONFIGURING SERVER DATA
-        rawServerResponse.observer.observeValues{
-            value in
-            switch value {
-            case .error(let error):
-                print("NON FATAL ERROR: \(error)")
-                return
-            case .success(let response):
-                ServerPipe.input.send(
-                    value: (
-                        newData: response,
+        if !forTesting {
+            let rawServerResponse = initialData.remoteAddListenerNoError()
+            let formattedServerResponse = rawServerResponse.observer.signal.compactMap { response -> ListenableDataReturnItem<T>? in
+                switch response {
+                case .error: return nil
+                case .success(let temp):
+                    return ListenableDataReturnItem(
+                        newData: temp,
                         fromDatabaseListener: true
                     )
-                )
+                }
             }
+            mergedPipe.input.send(value: formattedServerResponse)
+            self.disposable = rawServerResponse.disposable
         }
         
-        // MERGE AND FLATTEN SERVER AND USER SIGNALS
-        let mergedPipe = Signal<Signal<ListenableDataReturnItem<T>, Never>, Never>.pipe()
-        let flattenedSignal = mergedPipe.output.flatten(.merge)
-        mergedPipe.input.send(value: ServerPipe.output)
+        // FORMAT USER SIGNAL WITH: fromDatabaseListener = false
+        // AND ADD TO MERGED
+        let formattedUserSignal: Signal<ListenableDataReturnItem<T>, Never> = userPipe.output.map { data in
+            return ListenableDataReturnItem(newData: data, fromDatabaseListener: false)
+        }
         mergedPipe.input.send(value: formattedUserSignal)
+            
+        // COMPLETE MERGED PIPE
         mergedPipe.input.sendCompleted()
 
+        
         // MAINTAINS PREVIOUS ELEMENT
-        let previousSignal = flattenedSignal.combinePrevious(
-            (newData: initialData, fromDatabaseListener: false)
-        )
-        
-        // FILTER REPEAT EVENTS
-        let filteredSignal = previousSignal.filter { args in
-            guard args.0.newData != args.1.newData
-                else { return false }
-            return true
-        }
-        
-        // FORMATS AS ListenableDataReturn
-        let responseSignal:Signal<ListenableDataReturn<T>, Never> = filteredSignal.map {
-            args in
-            return (
-                data: args.1.newData,
-                previousData: args.0.newData
-            )
-            
+        let filteredSignal = flattenedSignal.skipRepeats().map{ vars -> T in
+            return vars.newData
         }
         
         // CREATES PROPERTY
         let listenableDataProperty = Property(
-            initial: (initialData, nil),
-            then: responseSignal
+            initial: initialData,
+            then: filteredSignal
         )
         
         // SETS PROPERTIES
         self.userPipe = userPipe.input
         self.mergedProperty = listenableDataProperty
-        self.disposable = rawServerResponse.disposable
+        self.savingType = savingType
         
         // SETS SAVE OBSERVATION
-        filteredSignal.observeValues{ args in
-            guard !args.1.fromDatabaseListener else {
-                return
-            }
-            self.saveToRemote(userSessionData: args.1.newData)
+        formattedUserSignal.observeValues{ data in
+            self.saveToRemote(userSessionData: data.newData)
         }
     }
 }
@@ -97,13 +84,13 @@ public class ListenableDataContainer<T: ListenableRemoteData> {
 extension ListenableDataContainer {
     public var listenableData: T {
         get {
-            return self.mergedProperty.value.data
+            return self.mergedProperty.value
         }
         set(newValue) {
             userPipe.send(value: newValue)
         }
     }
-    public var signal: Signal<ListenableDataReturn<T>, Never> {
+    public var signal: Signal<T, Never> {
         return self.mergedProperty.signal
     }
 }
@@ -113,7 +100,7 @@ extension ListenableDataContainer {
 // MARK: SAVE METHOD
 extension ListenableDataContainer {
     private func saveToRemote(userSessionData: T){
-        switch ListenableDataContainer.savingType {
+        switch self.savingType {
         case .server:
             userSessionData.remoteSave()
             .done{ _ in
@@ -145,7 +132,7 @@ public typealias ListenableDataReturn<T: ListenableRemoteData>  = (
     data: T,
     previousData: T?
 )
-public typealias ListenableDataReturnItem<T: ListenableRemoteData>  = (
-    newData: T,
-    fromDatabaseListener: Bool
-)
+public struct ListenableDataReturnItem<T: ListenableRemoteData>: Equatable {
+    let newData: T
+    let fromDatabaseListener: Bool
+}

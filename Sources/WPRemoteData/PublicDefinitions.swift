@@ -8,4 +8,5 @@
 
 import FirebaseFirestore
 
+/// Firebase Disposable. Different from ReactiveSwift Disposable
 public typealias ListenerDisposable = ListenerRegistration
