@@ -14,14 +14,27 @@ public class RemoteFileDownloadTask: DownloadTaskRoot {
     let localFile: LocalFileReference
     private var storageDownloadTask: StorageDownloadTask?
     
-    init(remoteFile: RemoteFileProtocol, localFile: LocalFileReference, handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil){
+    init(
+        remoteFile: RemoteFileProtocol,
+        localFile: LocalFileReference,
+        handler: (
+            (DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil)
+    {
         self.remoteFile = remoteFile
         self.localFile = localFile
         super.init(handler: handler)
     }
     
-    convenience init(remoteFile: RemoteFileProtocol, handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil){
-        self.init(remoteFile: remoteFile, localFile: remoteFile.localFile, handler: handler)
+    convenience init(
+        remoteFile: RemoteFileProtocol,
+        handler: (
+            (DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
+    ){
+        self.init(
+            remoteFile: remoteFile,
+            localFile: remoteFile.localFile,
+            handler: handler
+        )
     }
     public override func pause(){
         super.pause()
