@@ -17,7 +17,7 @@ open class DownloadTaskRoot: DownloadTaskProtocol {
     var completedTasks: [DownloadTaskSnapshot] = []
     private var observers: [String: DownloadTaskRoot.Observer] = [:]
     public var completionCallback: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)?
-    public let progress: Progress = Progress()
+    public let progress: Progress
     // make so it's only changable from completion status / completeTask
     private var error: Error? = nil
     public var currentChildTask: DownloadTaskProtocol? = nil {
@@ -48,23 +48,63 @@ open class DownloadTaskRoot: DownloadTaskProtocol {
     }
     public let progressSignal: Signal<Double, Error>
     private let progressInput: Signal<Double, Error>.Observer
+    
+    
+//    
+//    enum DownloadState {
+//        case initialized
+//        case paused
+//        case loading
+//        case error(error: Error)
+//        case success
+//    }
+    
     //let progressProperty: Property<Double>
     
     public init(
         handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
     ){
+        let progress: Progress = Progress()
+        progress.fileOperationKind = .downloading
+        
         let signal = Signal<Double, Error>.pipe()
+        
+//        let initialCombinedState = (
+//            state: DownloadState.initialized,
+//            downloadTaskSnapshot: DownloadTaskSnapshot(
+//                progress: progress,
+//                error: nil,
+//                task: nil,
+//                currentChildTask: nil,
+//                completedChildTaskSnapshots: []
+//            )
+//        )
+//
+//        let statePipe = Signal<DownloadState, Never>.pipe()
+//        let downloadSnapshotPipe = Signal<DownloadTaskSnapshot, Never>.pipe()
+//
+//        let combinedSignal = Signal.combineLatest(
+//            statePipe.output,
+//            downloadSnapshotPipe.output
+//        )
+//
+//        let combinedStateProperty = Property(
+//            initial: initialCombinedState, then: combinedSignal
+//        )
+        
+        
+        
+        
         
         self.progressInput = signal.input
         self.progressSignal = signal.output
         //self.progressProperty = Property(initial: 0, then: signal.output)
         self.completionCallback = handler
-        self.progress.fileOperationKind = .downloading
         self.uid = UUID().uuidString
-        
+        self.progress = progress
         // SET OBSERVER TO UPDATE PROGRESS SIGNAL
-        _ = self.observe(.progress){ snapshot in
-            self.progressInput.send(
+        _ = self.observe(.progress){ [weak self] snapshot in
+            self?.progressInput.send(
                 value: snapshot.progress.fractionCompleted
             )
         }
@@ -138,6 +178,8 @@ extension DownloadTaskRoot {
             return observer.type == type
         }
     }
+    
+    
     private func setObservations(remoteFileDownloadTask: DownloadTaskProtocol?){
         _ = remoteFileDownloadTask?.observe(.failure, handler: failureHandler)
         _ = remoteFileDownloadTask?.observe(.pause, handler: pauseHandler)

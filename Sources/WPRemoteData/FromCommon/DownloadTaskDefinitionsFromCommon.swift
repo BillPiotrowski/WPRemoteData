@@ -9,7 +9,7 @@
 import Foundation
 import ReactiveSwift
 
-public protocol DownloadTaskProtocol {
+public protocol DownloadTaskProtocol: class {
     
     var progressSignal: Signal<Double, Error> { get }
     
@@ -40,8 +40,8 @@ public struct DownloadTaskSnapshot {
     public let progress: Progress
     public let error: Error?
     //let metadata:
-    let task: DownloadTaskProtocol
-    let currentChildTask: DownloadTaskProtocol?
+    weak var task: DownloadTaskProtocol?
+    weak var currentChildTask: DownloadTaskProtocol?
     let completedChildTaskSnapshots: [DownloadTaskSnapshot]
 }
 
