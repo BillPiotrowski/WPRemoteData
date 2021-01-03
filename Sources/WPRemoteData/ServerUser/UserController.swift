@@ -20,39 +20,55 @@ public typealias ServerEmailAuth = EmailAuthProvider
 public class UserController: NSObject {
     //private var authUI: FUIAuth?
     
-    public let userSignal: Signal<ServerUser?, Error>
-    private let userInput: Signal<ServerUser?, Error>.Observer
+    public let userSignal: Signal<ServerUser?, Never>
+    private let userInput: Signal<ServerUser?, Never>.Observer
+    
+    private let listenerHandle: AuthStateDidChangeListenerHandle
 
     
     public override init(){
-        let signal = Signal<ServerUser?, Error>.pipe()
+        let signal = Signal<ServerUser?, Never>.pipe()
         
         
         //self.authUI = FUIAuth.defaultAuthUI()
         
-        self.userInput = signal.input
-        self.userSignal = signal.output
-        super.init()
         
 //        let providers: [FUIAuthProvider] = [
 //        ]
         //authUI?.providers = providers
         //authUI?.delegate = self
         
-        Auth.auth().addStateDidChangeListener(
-            self.userSateChangeHandler
-        )
+        let listenerHandle = Auth.auth().addStateDidChangeListener { (firebaseAuth, firebaseUser) in
+            
+            guard let firebaseUser = firebaseUser
+                else {
+                    // LOGGED OUT IS DIFFERENT THAN ERROR
+                    signal.input.send(value: nil)
+                    return
+            }
+            signal.input.send(value: ServerUser(user: firebaseUser))
+        }
+        
+        self.listenerHandle = listenerHandle
+        self.userInput = signal.input
+        self.userSignal = signal.output
+        super.init()
+        
+        
+//        let temp = Auth.auth().addStateDidChangeListener(
+//            self.userSateChangeHandler
+//        )
         
     }
-    func userSateChangeHandler(_ firebaseAuth: Auth, firebaseUser: User?){
-        guard let firebaseUser = firebaseUser
-            else {
-                // LOGGED OUT IS DIFFERENT THAN ERROR
-                userInput.send(value: nil)
-                return
-        }
-        userInput.send(value: ServerUser(user: firebaseUser))
-    }
+//    func userSateChangeHandler(_ firebaseAuth: Auth, firebaseUser: User?){
+//        guard let firebaseUser = firebaseUser
+//            else {
+//                // LOGGED OUT IS DIFFERENT THAN ERROR
+//                userInput.send(value: nil)
+//                return
+//        }
+//        userInput.send(value: ServerUser(user: firebaseUser))
+//    }
 }
 
 
