@@ -16,7 +16,11 @@ let package = Package(
             targets: ["WPRemoteData"]),
     ],
     dependencies: [
-        .package(name: "Firebase", url: "https://github.com/firebase/firebase-ios-sdk.git", .branch("7.0-spm-beta")),
+        .package(
+            name: "Firebase",
+            url: "https://github.com/firebase/firebase-ios-sdk.git",
+            .branch("7.0-spm-beta")
+        ),
         .package(url: "https://github.com/mxcl/PromiseKit", from: "6.0.0"),
         .package(
             name: "ReactiveSwift",
@@ -32,10 +36,6 @@ let package = Package(
         .target(
             name: "WPRemoteData",
             dependencies: [
-                .product(
-                    name: "FirebaseAuth",
-                    package: "Firebase"
-                ),
                 .product(
                     name: "FirebaseFirestore",
                     package: "Firebase"
