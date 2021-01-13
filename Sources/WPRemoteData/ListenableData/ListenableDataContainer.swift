@@ -78,6 +78,10 @@ public class ListenableDataContainer<T: ListenableRemoteData> {
             self.saveToRemote(userSessionData: data.newData)
         }
     }
+    
+    deinit {
+        print("DID DEINIT LISTENABLEDATA CONTAINER!!!")
+    }
 }
 
 // MARK: PUBLIC VARS
@@ -90,8 +94,15 @@ extension ListenableDataContainer {
             userPipe.send(value: newValue)
         }
     }
-    public var signal: Signal<T, Never> {
-        return self.mergedProperty.signal
+//    public var signal: Signal<T, Never> {
+//        return self.mergedProperty.signal
+//    }
+    public var signalProducer: SignalProducer<T, Never>{
+        return self.mergedProperty.producer
+    }
+    public func stopListening(){
+        self.disposable?.remove()
+        self.userPipe.sendCompleted()
     }
 }
 
