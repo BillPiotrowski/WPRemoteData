@@ -11,7 +11,7 @@ import SPCommon
 
 
 public protocol LocallyArchivableRemoteDataReference: RemoteDataReference, RemoteDownloadable {
-    var localFileReference: LocalFileReference { get }
+    var localFileReference: LocalFileOpenableRedundant { get }
 }
 
 // MARK: DOWNLOAD PROMISE

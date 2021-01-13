@@ -125,7 +125,7 @@ extension DownloadTaskItem {
 public class RemoteFileDownloadTask: DownloadTaskRoot, DownloadTaskItem {
     
     let remoteFile: RemoteFileProtocol
-    let localFile: LocalFileReference
+    let localFile: LocalFile
     private var storageDownloadTask: StorageDownloadTask?
     
     private let downloadStateInput: Signal<DownloadState, Never>.Observer
@@ -144,7 +144,7 @@ public class RemoteFileDownloadTask: DownloadTaskRoot, DownloadTaskItem {
     
     init(
         remoteFile: RemoteFileProtocol,
-        localFile: LocalFileReference,
+        localFile: LocalFile,
         handler: (
             (DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil)
     {

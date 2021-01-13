@@ -14,7 +14,8 @@ import SPCommon
 public protocol RemoteFileProtocol: RemoteDownloadable {
     var location: RemoteFileFolderProtocol { get }
     var name: String { get }
-    var localFile: LocalFileReference { get }
+//    var localFile: LocalFileOpenableRedundant { get }
+    var localFile: LocalFile { get }
     init(remoteFileFolder: RemoteFileFolderProtocol, file: String) throws
     
     

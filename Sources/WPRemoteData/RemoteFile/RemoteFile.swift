@@ -55,7 +55,7 @@ extension RemoteFileProtocol /*: RemoteDownloadable*/ {
     }
     static func writeToLocal(
         storageDocument: RemoteFileProtocol,
-        localDocument: LocalFileReference,
+        localDocument: LocalFile,
         handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
     ) -> RemoteFileDownloadTask {
         let downloadTask = Self.downloadTask(
@@ -69,12 +69,12 @@ extension RemoteFileProtocol /*: RemoteDownloadable*/ {
     }
     static func downloadTask(
         storageDocument: RemoteFileProtocol,
-        localDocument: LocalFileReference,
+        localDocument: LocalFile,
         handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
     ) -> RemoteFileDownloadTask {
         return RemoteFileDownloadTask(remoteFile: storageDocument, handler: handler)
     }
-    static func write(_ storageDocument: RemoteFileProtocol, toFile: LocalFileReference) -> RemoteFileDownloadTask {
+    static func write(_ storageDocument: RemoteFileProtocol, toFile: LocalFile) -> RemoteFileDownloadTask {
         return Self.writeToLocal(storageDocument: storageDocument, localDocument: toFile)
     }
     public func writeToLocal(handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil) -> RemoteFileDownloadTask {

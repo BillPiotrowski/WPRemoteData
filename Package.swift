@@ -29,7 +29,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/BillPiotrowski/SPCommon.git",
-            from: "0.1.0"
+            Package.Dependency.Requirement.branch("main")
         )
     ],
     targets: [
