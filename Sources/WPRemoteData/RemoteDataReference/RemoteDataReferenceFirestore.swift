@@ -11,8 +11,10 @@ import PromiseKit
 import ReactiveSwift
 
 extension RemoteDataReference {
-    var documentReference: DocumentReference {
-        return remoteDataLocation.collectionReference.document(documentID)
+    var documentReference: DocumentReferenceInterface {
+        return remoteDataLocation.collectionReference.documentInterface(
+            documentID
+        )// as! DocumentReference
     }
 }
 
@@ -22,7 +24,7 @@ extension RemoteDataReference {
         initializableData: RemoteDataReference
     ) -> Promise<ReadableRemoteData> {
         return Promise { seal in
-            initializableData.documentReference.getDocument {
+            initializableData.documentReference.getDocumentInterface {
                 documentSnapshot, getError in
 
                 do {
@@ -70,7 +72,7 @@ extension RemoteDataReference {
         observer: Signal<ServerListenerResponse<T>, Never>
     ) {
         let signal = Signal<ServerListenerResponse<T>, Never>.pipe()
-        let disposable = remoteDataProtocol.documentReference.addSnapshotListener { documentSnapshot, error in
+        let disposable = remoteDataProtocol.documentReference.addSnapshotListenerInterface { documentSnapshot, error in
             
             guard let documentSnapshot = documentSnapshot
                 else {
@@ -119,7 +121,7 @@ extension RemoteDataReference {
         observer: Signal<T, Error>
     ) {
         let signal = Signal<T, Error>.pipe()
-        let disposable = remoteDataProtocol.documentReference.addSnapshotListener { documentSnapshot, error in
+        let disposable = remoteDataProtocol.documentReference.addSnapshotListenerInterface { documentSnapshot, error in
             
             guard let documentSnapshot = documentSnapshot
                 else {

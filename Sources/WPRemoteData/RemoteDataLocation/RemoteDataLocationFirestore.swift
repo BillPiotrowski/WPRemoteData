@@ -12,21 +12,53 @@ import ReactiveSwift
 
 // MARK: COLLECTION REF
 extension RemoteDataLocation {
-    var collectionReference: CollectionReference {
-        return Firestore.firestore().collection(path)
+    /// Complete relative path (including name), separated by "/".
+    ///
+    /// Used to create Firebase `CollectionReference`.
+    internal var path: String {
+        return pathArray.joined(separator: "/")
+    }
+    
+    /// The Firebase reference to the collection.
+    ///
+    /// Used to define the folder location.
+    var collectionReferenceInterface: CollectionReferenceInterface {
+        return Self.database.collectionInterface(path)
+    }
+    var collectionReference: CollectionReferenceInterface {
+        self.collectionReferenceInterface
+//        return database.collection(path)
     }
 }
+
+extension RemoteDataLocation {
+    static var database: DatabaseInterface { Firestore.firestore() }
+}
+
+
+// MARK: GENERATE ID
+extension RemoteDataLocation {
+    
+    /// Generates a unique ID for the location without the need to send a server request.
+    public func generateDocumentID() -> String {
+        
+        return collectionReferenceInterface.documentInterface().documentID
+    }
+}
+
+
+
 
 // MARK: GETALL
 extension RemoteDataLocation {
     
     // SHOULD BE INTERNAL because uses Query from Firebase??
     internal static func getAll(
-        query: Query,
+        query: QueryInterface,
         remoteDataLocation: RemoteDataLocation
     ) -> Promise<[ReadableRemoteData]> {
         return Promise { seal in
-            query.getDocuments(){ response, queryError in
+            query.getDocumentsInterface(){ response, queryError in
                 do {
                     let readableRemoteDataArray = try remoteDataLocation.makeReadableRemoteDataFrom(
                             querySnapshot: response
@@ -63,54 +95,9 @@ extension RemoteDataLocation {
             filters: filters
         )
     }
-    /*
-    
-    
-    
-    public static func getAll(
-        remoteDataFolder: RemoteDataLocation
-    ) -> Promise<[ReadableRemoteData]> {
-        let query = remoteDataFolder.collectionReference
-        return Self.getAll(
-            query: query,
-            remoteDataLocation: remoteDataFolder
-        )
-    }
-    
-    public static func getAllWhere(
-        remoteDataFolder: RemoteDataLocation,
-        field: String,
-        isEqualTo: Any
-    ) -> Promise<[ReadableRemoteData]> {
-        let query = remoteDataFolder.collectionReference.whereField(
-            field,
-            isEqualTo: isEqualTo
-        )
-        return Self.getAll(
-            query: query,
-            remoteDataLocation: remoteDataFolder
-        )
-    }
-
-    public func getAll() -> Promise<[ReadableRemoteData]> {
-        return Self.getAll(
-            remoteDataFolder: self
-        )
-    }
-    
-    public func getAllWhere(
-        field: String,
-        isEqualTo: Any
-    ) -> Promise<[ReadableRemoteData]> {
-        return Self.getAllWhere(
-            remoteDataFolder: self,
-            field: field,
-            isEqualTo: isEqualTo
-        )
-    }
-
- */
 }
+
+
 // MARK: ADD LISTENER
 extension RemoteDataLocation {
     //@available(*, deprecated, message: "use addListener() -> Signal")
@@ -118,7 +105,7 @@ extension RemoteDataLocation {
         remoteDataFolder: RemoteDataLocation
     ) -> RemoteDataLocationListenerResponse {
         let signal = Signal<GetAllResponse, Never>.pipe()
-        let disposable = remoteDataFolder.collectionReference.addSnapshotListener {
+        let disposable = remoteDataFolder.collectionReference.addSnapshotListenerInterface {
             (querySnapshot, error) in
             
             let response = GetAllResponse(
@@ -145,26 +132,15 @@ extension RemoteDataLocation {
 
 
 
-// MARK: GENERATE ID
-extension RemoteDataLocation {
-    static func generateDocumentID(serverLocation: RemoteDataLocation) -> String {
-        return serverLocation.collectionReference.document().documentID
-    }
-    
-    public func generateDocumentID() -> String {
-        return Self.generateDocumentID(serverLocation: self)
-    }
-}
-
 
 // MARK: T VERSION
 extension RemoteDataLocation {
     internal static func getAll<T: ReadableRemoteData>(
-        query: Query,
+        query: QueryInterface,
         remoteDataLocation: RemoteDataLocation
     ) -> Promise<[T]> {
         return Promise { seal in
-            query.getDocuments(){ response, queryError in
+            query.getDocumentsInterface(){ response, queryError in
                 do {
                     let readableRemoteDataArray: [T] = try remoteDataLocation.makeReadableRemoteDataArrayFrom(
                         querySnapshot: response
@@ -215,10 +191,14 @@ extension RemoteDataLocation {
         field: String,
         isEqualTo: Any
     ) -> Promise<[T]> {
-        let query = remoteDataFolder.collectionReference.whereField(
-            field,
+        let query = remoteDataFolder.collectionReference.whereFieldInterface(
+            [field],
             isEqualTo: isEqualTo
         )
+//        let query = remoteDataFolder.collectionReference.whereField(
+//            field,
+//            isEqualTo: isEqualTo
+//        )
         return Self.getAll(
             query: query,
             remoteDataLocation: remoteDataFolder

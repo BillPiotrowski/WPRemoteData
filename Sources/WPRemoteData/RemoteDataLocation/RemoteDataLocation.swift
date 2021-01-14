@@ -7,41 +7,107 @@
 //
 
 import SPCommon
-import SPCommon
+import FirebaseFirestore
 
 
 // RENAME TO REMOTE DATA LOCATION?
 
 // MARK: FOLDER PROTOCOL
 /// Protocol describing a remote server location where data can be referenced.
-public protocol RemoteDataLocation: RemoteCommonProtocol {
-    var relativePathArray: [String] { get }
-    var parentLocation: RemoteDataLocation? { get }
+public protocol RemoteDataLocation: RemoteDataItem {
+    static var name: String { get }
+    
+    /// The optional parent. This would be used to generate the path. If no parent is set, collection will exist in the root directory.
+    var parentReference: RemoteDataReference? { get }
+    
+    // This should be removed at some point
     func makeRemoteDataReference(
         document: RemoteDataDocument
     ) -> RemoteDataReference
+    
+    static var database: DatabaseInterface { get }
 }
 
+// MARK: DEFAULT
 extension RemoteDataLocation {
-    public var pathArray: [String] {
-        var pathArray = parentPathArray
-        pathArray.append(contentsOf: relativePathArray)
-        return pathArray
-    }
-    
-    internal var path: String {
-        return pathArray.joined(separator: "/")
-    }
-    
-    internal var parentPathArray: [String] {
-        return parentLocation?.pathArray ?? []
-    }
+    public var parentReference: RemoteDataReference? { nil }
 }
 
 
 
+
+// MARK: COMFORM: RemoteDataItem
 extension RemoteDataLocation {
-    
+    public var name: String {
+        Self.name
+    }
+    public var parentPathArray: [String] {
+        parentReference?.pathArray ?? []
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extension RemoteDataLocation {
     // THROWS IF THERE IS A SINGLE ERROR IN DOCS
     /// Converts the response from a Cloud Firestore QuerySnapshot into and array of ReadableRemoteData. Throws error if there is a problem with any single file.
     private static func makeReadableRemoteDataFrom(

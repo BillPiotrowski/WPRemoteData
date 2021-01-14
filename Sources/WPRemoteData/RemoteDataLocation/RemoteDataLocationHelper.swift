@@ -15,12 +15,12 @@ extension RemoteDataLocation {
     /// Converts the response from a Cloud Firestore QuerySnapshot into and array of ReadableRemoteData. Throws error if there is a problem with any single file.
     internal static func makeReadableRemoteDataFrom(
         remoteDataTypeFolder: RemoteDataLocation,
-        querySnapshot: QuerySnapshot?
+        querySnapshot: QuerySnapshotInterface?
     ) throws -> [ReadableRemoteData] {
         var readableRemoteData = [ReadableRemoteData]()
         guard let querySnapshot = querySnapshot
             else { throw RemoteDataLocationError.missingQuerySnapshot }
-        for document in querySnapshot.documents {
+        for document in querySnapshot.documentsInterface {
             let dictionary = RemoteDataDocument(
                 document: document,
                 folder: remoteDataTypeFolder
@@ -35,12 +35,12 @@ extension RemoteDataLocation {
     
     internal static func makeReadableRemoteDataFrom<T: ReadableRemoteData>(
         remoteDataTypeFolder: RemoteDataLocation,
-        querySnapshot: QuerySnapshot?
+        querySnapshot: QuerySnapshotInterface?
     ) throws -> [T] {
         var readableRemoteDataArray = [T]()
         guard let querySnapshot = querySnapshot
             else { throw RemoteDataLocationError.missingQuerySnapshot }
-        for document in querySnapshot.documents {
+        for document in querySnapshot.documentsInterface {
             let dictionary = RemoteDataDocument(
                 document: document,
                 folder: remoteDataTypeFolder
@@ -53,7 +53,7 @@ extension RemoteDataLocation {
     
     /// Converts the response from a Cloud Firestore QuerySnapshot into and array of ReadableRemoteData. Throws error if there is a problem with any single file.
     internal func makeReadableRemoteDataFrom(
-        querySnapshot: QuerySnapshot?
+        querySnapshot: QuerySnapshotInterface?
     ) throws -> [ReadableRemoteData] {
         return try Self.makeReadableRemoteDataFrom(
             remoteDataTypeFolder: self,
@@ -61,7 +61,7 @@ extension RemoteDataLocation {
         )
     }
     internal func makeReadableRemoteDataArrayFrom<T: ReadableRemoteData>(
-        querySnapshot: QuerySnapshot?
+        querySnapshot: QuerySnapshotInterface?
     ) throws -> [T] {
         return try Self.makeReadableRemoteDataFrom(
             remoteDataTypeFolder: self,
@@ -71,10 +71,10 @@ extension RemoteDataLocation {
     
     /// Creates a usable Cloud Firestore Query from a CollectionReference and filters
     internal static func makeQueryFrom(
-        collectionReference: CollectionReference,
+        collectionReference: CollectionReferenceInterface,
         filters: [WhereFilter]? = nil
-    ) -> Query {
-        var query: Query = collectionReference
+    ) -> QueryInterface {
+        var query: QueryInterface = collectionReference
         if let filters = filters {
             for filter in filters {
                 query = filter.applyTo(query: query)

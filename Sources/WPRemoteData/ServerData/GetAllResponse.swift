@@ -23,7 +23,7 @@ import PromiseKit
         }
         
         public init(
-            querySnapshot: QuerySnapshot?,
+            querySnapshot: QuerySnapshotInterface?,
             error: Error?,
             serverLocation: RemoteDataLocation
         ){

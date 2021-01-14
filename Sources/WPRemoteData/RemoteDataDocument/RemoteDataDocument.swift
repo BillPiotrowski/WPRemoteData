@@ -12,11 +12,11 @@ import FirebaseFirestore
 // RemoteDataResult ??
 // MARK: DICTIONARY??? BAD NAME
 public struct RemoteDataDocument {
-    private let document: DocumentSnapshot
+    private let document: DocumentSnapshotInterface
     public let folder: RemoteDataLocation
     
     init(
-        document: DocumentSnapshot,
+        document: DocumentSnapshotInterface,
         folder: RemoteDataLocation
     ){
         self.document = document

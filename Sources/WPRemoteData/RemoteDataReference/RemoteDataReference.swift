@@ -19,14 +19,38 @@ extension RemoteDataReferenceKnownType {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
 /// Protocol describing a reference to data that exists on a remote server.
-public protocol RemoteDataReference {
-    var remoteDataLocation: RemoteDataLocation { get }
+public protocol RemoteDataReference: RemoteDataItem {
+    
+    /// The identifier for the document.
+    ///
+    /// For consistenty with Local, might change this to `name`.
     var documentID: String { get }
+    
+    var remoteDataLocation: RemoteDataLocation { get }
+    
     func readableRemoteDataType(
         remoteDataDocument: RemoteDataDocument
     ) -> ReadableRemoteData.Type
     
+}
+
+// MARK: CONFORM: RemoteDataItem
+extension RemoteDataReference {
+    public var parentPathArray: [String] {
+        remoteDataLocation.pathArray
+    }
+    public var name: String { documentID }
 }
 
 extension RemoteDataReference {

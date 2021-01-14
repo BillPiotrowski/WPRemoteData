@@ -9,21 +9,23 @@
 import FirebaseFirestore
 import PromiseKit
 
-public struct WriteBatch {
+public struct WriteBatchScorepio {
     internal static let db = Firestore.firestore()
-    internal let db = WriteBatch.db
-    internal let batch = db.batch()
+    internal let db = WriteBatchScorepio.db
+    internal let batch: WriteBatchInterface
     public init(){
+        let batch = db.batch()
+        self.batch = batch
     }
 }
 
 // MARK: ADD TO BATCH
-extension WriteBatch {
+extension WriteBatchScorepio {
     public func setData(
         remoteDataReference: RemoteDataReference,
         dictionary: [String: Any]
     ){
-        batch.setData(
+        batch.setDataInterface(
             dictionary,
             forDocument: remoteDataReference.documentReference
         )
@@ -41,14 +43,14 @@ extension WriteBatch {
         remoteDataReference: RemoteDataReference,
         dictionarySubset: [String: Any]
     ){
-        batch.updateData(
+        batch.updateDataInterface(
             dictionarySubset,
             forDocument: remoteDataReference.documentReference
         )
     }
     
     public func deleteDocument(remoteDataReference: RemoteDataReference){
-        batch.deleteDocument(remoteDataReference.documentReference)
+        batch.deleteDocumentInterface(remoteDataReference.documentReference)
     }
     public func deleteDocument(remoteData: RemoteData){
         self.deleteDocument(
@@ -58,7 +60,7 @@ extension WriteBatch {
 }
 
 // MARK: COMMIT
-extension WriteBatch {
+extension WriteBatchScorepio {
     public func commit() -> Promise<Void> {
         return Promise { seal in
             batch.commit() { error in
