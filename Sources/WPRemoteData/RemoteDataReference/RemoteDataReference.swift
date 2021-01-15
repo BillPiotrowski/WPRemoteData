@@ -28,7 +28,6 @@ extension RemoteDataReferenceKnownType {
 
 
 
-
 /// Protocol describing a reference to data that exists on a remote server.
 public protocol RemoteDataReference: RemoteDataItem {
     
@@ -39,12 +38,14 @@ public protocol RemoteDataReference: RemoteDataItem {
     
     var remoteDataLocation: RemoteDataLocation { get }
     
+    
     func readableRemoteDataType(
         remoteDataDocument: RemoteDataDocument
     ) -> ReadableRemoteData.Type
     
 }
 
+// MARK: -
 // MARK: CONFORM: RemoteDataItem
 extension RemoteDataReference {
     public var parentPathArray: [String] {
@@ -52,6 +53,15 @@ extension RemoteDataReference {
     }
     public var name: String { documentID }
 }
+
+
+
+
+
+
+
+
+
 
 extension RemoteDataReference {
     // DEPRECATE AND SIMPLY USE readableRemoteDataType.init()

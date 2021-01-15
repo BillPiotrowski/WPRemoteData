@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import FirebaseFirestore
 
 // MARK: DOCUMENT / REF
 public protocol DocumentReferenceInterface {
@@ -24,42 +23,17 @@ public protocol DocumentReferenceInterface {
     
     func setData(_ documentData: [String: Any], completion: ((Error?) -> Void)?)
 }
-extension DocumentReference: DocumentReferenceInterface {
-    public func addSnapshotListenerInterface(
-        _ listener: @escaping (DocumentSnapshotInterface?, Error?) -> Void
-    ) -> ListenerRegistrationInterface {
-        self.addSnapshotListener(){ snapshot, error in
-            listener(snapshot, error)
-        }
-    }
-    
-    public func getDocumentInterface(completion: @escaping (DocumentSnapshotInterface?, Error?) -> Void) {
-        self.getDocument(){ snapshot, error in
-            completion(snapshot, error)
-        }
-    }
-    
-    
-    
-}
 
-struct DummyDatabaseDocument {
-    let documentID: String
-    init(){
-        self.documentID = "randomStringID"
-    }
-}
-//extension DummyDatabaseDocument: DocumentReferenceInterface {
-//
-//}
-
-
-
-
+// MARK: -
 // MARK: DOCUMENT SNAPSHOT
+
+/// An interface that models the Firestore database.
+///
+/// - note: This is not intended to be used publicly. Instead, should be mapped to `ScorepioDocumentResponse` which has specified generics.
 public protocol DocumentSnapshotInterface {
     var documentID: String { get }
     func data() -> [String: Any]?
 }
-extension DocumentSnapshot: DocumentSnapshotInterface {
-}
+
+
+

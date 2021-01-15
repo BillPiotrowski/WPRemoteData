@@ -22,6 +22,9 @@ class DummyDocumentReference {
         
     }
 }
+
+// MARK: -
+// MARK: CONFORM
 extension DummyDocumentReference: DocumentReferenceInterface {
     var documentID: String {
         let array = path.split(separator: "/")

@@ -8,7 +8,7 @@
 
 import Foundation
 
-// SEPARATE INTO REMOTE WRITEABLE / REMOTE READABLE
+// CAN THIS BE DELETED?
 
 public protocol RemoteData {
     //associatedtype myType

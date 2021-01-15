@@ -7,19 +7,19 @@
 //
 
 import Foundation
-import PromiseKit
+import Promises
 
 public protocol ReadableRemoteDataKnownFolder: ReadableRemoteData {
     static var remoteDataTypeFolder: RemoteDataLocation { get }
 }
 
-extension ReadableRemoteDataKnownFolder {
-    public static func getAll(
-        filters: [WhereFilter]? = nil
-    ) -> Promise<[Self]> {
-        return Self.remoteGetAll(
-            serverLocation: Self.remoteDataTypeFolder,
-            filters: filters
-        )
-    }
-}
+//extension ReadableRemoteDataKnownFolder {
+//    public static func getAll(
+//        filters: [WhereFilter]? = nil
+//    ) -> Promise<[Self]> {
+//        return Self.remoteGetAll(
+//            serverLocation: Self.remoteDataTypeFolder,
+//            filters: filters
+//        )
+//    }
+//}

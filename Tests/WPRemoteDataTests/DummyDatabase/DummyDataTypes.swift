@@ -26,6 +26,11 @@ extension TestLocation: RemoteDataLocation {
 extension TestLocation {
     static var database: DatabaseInterface { DummyDatabase.shared }
 }
+extension TestLocation: RemoteDataLocationVariableChild {
+    typealias A = TestDocument
+    
+    
+}
 
 // MARK: -
 // MARK: DOCUMENT
@@ -35,15 +40,24 @@ struct TestDocument {
 extension TestDocument: RemoteDataReference {
     var documentID: String { testDataID }
     
-    var remoteDataLocation: RemoteDataLocation {
-        TestLocation()
-    }
     
     func readableRemoteDataType(
         remoteDataDocument: RemoteDataDocument
     ) -> ReadableRemoteData.Type {
         TestData.self
     }
+}
+extension TestDocument: RemoteDataReferenceGeneric {
+    typealias Data = TestData
+    
+    var location: TestLocation {
+        TestLocation()
+    }
+    init(location: TestLocation, documentID: String){
+        self.init(testDataID: documentID)
+    }
+    
+    
 }
 
 // MARK: -
@@ -71,5 +85,18 @@ extension TestData: ReadableRemoteData {
         return TestDocument(testDataID: testDataID)
     }
     
+    
+}
+extension TestData: RemoteDataGeneric {
+    init(
+        remoteDataReference: TestDocument,
+        dictionary: [String : Any]
+    ) throws {
+        self.init(testDataID: remoteDataReference.testDataID)
+    }
+    
+    var reference: TestDocument {
+        TestDocument(testDataID: testDataID)
+    }
     
 }

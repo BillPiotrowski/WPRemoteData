@@ -16,6 +16,13 @@ public protocol ReadableRemoteData: ReadableData, WriteableData, RemoteData {
 }
 
 
+public protocol RemoteDataGeneric: ReadableRemoteData {
+    associatedtype Reference: RemoteDataReferenceGeneric
+    var reference: Reference { get }
+    init(remoteDataReference: Reference, dictionary: [String: Any]) throws
+}
+
+
 
 // STILL USED FOR LISTENER. REPLACE
 // MARK: HELPER FUNCTIONS
@@ -28,19 +35,19 @@ extension ReadableRemoteData {
         return (firestoreDoc: doc, error: result.error)
     }
     */
-    internal static func createGetAllResponse(result: GetAllResponse) -> (firestoreDocs: [Self], error: Error?) {
-        var returnArray: [Self] = []
-        var convertingError: RemoteDataError? = nil
-        
-        for firestoreDoc in result.documents {
-            guard let doc = firestoreDoc as? Self else {
-                convertingError = RemoteDataError.couldNotConvertToSelf(type: Self.self)
-                break
-            }
-            returnArray.append(doc)
-        }
-        return(returnArray, result.error ?? convertingError)
-    }
+//    internal static func createGetAllResponse(result: GetAllResponse) -> (firestoreDocs: [Self], error: Error?) {
+//        var returnArray: [Self] = []
+//        var convertingError: RemoteDataError? = nil
+//        
+//        for firestoreDoc in result.documents {
+//            guard let doc = firestoreDoc as? Self else {
+//                convertingError = RemoteDataError.couldNotConvertToSelf(type: Self.self)
+//                break
+//            }
+//            returnArray.append(doc)
+//        }
+//        return(returnArray, result.error ?? convertingError)
+//    }
 }
 
 

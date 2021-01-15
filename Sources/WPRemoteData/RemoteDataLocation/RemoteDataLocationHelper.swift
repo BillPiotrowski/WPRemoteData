@@ -70,16 +70,16 @@ extension RemoteDataLocation {
     }
     
     /// Creates a usable Cloud Firestore Query from a CollectionReference and filters
-    internal static func makeQueryFrom(
-        collectionReference: CollectionReferenceInterface,
-        filters: [WhereFilter]? = nil
-    ) -> QueryInterface {
-        var query: QueryInterface = collectionReference
-        if let filters = filters {
-            for filter in filters {
-                query = filter.applyTo(query: query)
-            }
-        }
-        return query
-    }
+//    internal static func makeQueryFrom(
+//        collectionReference: CollectionReferenceInterface,
+//        filters: [WhereFilter]? = nil
+//    ) -> QueryInterface {
+//        var query: QueryInterface = collectionReference
+//        if let filters = filters {
+//            for filter in filters {
+//                query = filter.applyTo(query: query)
+//            }
+//        }
+//        return query
+//    }
 }

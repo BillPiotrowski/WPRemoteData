@@ -10,7 +10,7 @@ import FirebaseFirestore
 import PromiseKit
 
 // MAY DEPRECATE, but leaving in case there is use for a container to compare changes when listening to a folder.
-
+/*
 // MARK: RESPONSE
 //extension RemoteDataFolderProtocol {
     public struct GetAllResponse {
@@ -79,3 +79,4 @@ extension GetAllResponse: TaskReturn {
 }
  */
  
+*/

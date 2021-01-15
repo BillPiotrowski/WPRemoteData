@@ -30,7 +30,12 @@ let package = Package(
         .package(
             url: "https://github.com/BillPiotrowski/SPCommon.git",
             Package.Dependency.Requirement.branch("main")
-        )
+        ),
+        .package(
+            name: "Promises",
+            url: "https://github.com/google/promises.git",
+            "1.2.8" ..< "1.3.0"
+        ),
     ],
     targets: [
         .target(
@@ -59,7 +64,11 @@ let package = Package(
                 .product(
                     name: "SPCommon",
                     package: "SPCommon"
-                )
+                ),
+                .product(
+                    name: "Promises",
+                    package: "Promises"
+                ),
             ]
         ),
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.

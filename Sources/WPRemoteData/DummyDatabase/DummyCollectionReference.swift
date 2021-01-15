@@ -8,29 +8,27 @@
 import Foundation
 
 class DummyCollectionReference {
+    /// The path of the collection relative to the root of the database.
     let path: String
+    
+    /// An array of query filters as strings.
+    ///
+    /// - note: `property1==value1`
     internal private (set) var query = [String]()
-    internal private (set) var hasListener: Bool = false
+    
+    /// A collections of listeners stored by their hash as key. Value contains a DummyDisposable and its relative listener enclosure.
+    ///
+    /// - important: DummyDisposal will dispose, but not actually prevent enclosure from being called.
+    ///
+    /// Could possible add that feature in future, but does not seem important for testing purposes. Mainly looking at retain cycles and proper release. Not actual functionality.
+    internal private (set) var listeners: [Int: (DummyDisposable, (QuerySnapshotInterface?, Error?) -> Void)] = [:]
+    
     
     init(path: String){
         self.path = path
     }
 }
 
-// MARK: -
-// MARK: TESTING HELPERS
-extension DummyCollectionReference {
-    var queryString: String? {
-        guard query.count > 0
-        else { return nil }
-        return self.query.joined(separator: "&")
-    }
-    var relativeURL: String {
-        guard let queryString = queryString
-        else { return path }
-        return "\(path)?\(queryString)"
-    }
-}
 
 // MARK: -
 // MARK: CONFORM: CollectionReferenceInterface
@@ -112,19 +110,77 @@ extension DummyCollectionReference: QueryInterface {
         completion(nil, NSError(domain: "no docs", code: 1))
     }
     
-    func addSnapshotListenerInterface(
+    /// Sends a dummy error after 1 second.
+    open func addSnapshotListenerInterface(
         _ listener: @escaping (QuerySnapshotInterface?, Error?) -> Void
     ) -> ListenerRegistrationInterface {
-        print("INSIDE ADDNG!!")
-        self.hasListener = true
-        let disposable = DummyDisposable(){
-            self.hasListener = false
+        let firebaseListener = DummyDisposable(){}
+        
+        // Test listener will dispose, but does actually prevent the enclosure from being called.
+        self.listeners[firebaseListener.hash] = (
+            firebaseListener,
+            listener
+        )
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            listener(nil, NSError(domain: "asdf", code: 2))
         }
-//        listener(nil, NSError(domain: "no docs", code: 1))
-        return disposable
+        
+        return firebaseListener
     }
     
     
+}
+
+
+// MARK: -
+// MARK: TESTING HELPERS
+extension DummyCollectionReference {
+    
+    /// Returns a query string of the applied filters in the style of a URL GET. Does not include root url or initial `?`.
+    var queryString: String? {
+        guard query.count > 0
+        else { return nil }
+        return self.query.joined(separator: "&")
+    }
+    
+    /// A String that represents the relative url to the database. Begins with collection location and if there is a query string, returns that as well formated as a URL GET.
+    ///
+    /// - note:
+    ///
+    /// example: location?property1==value1&property2>=value2
+    var relativeURLString: String {
+        guard let queryString = queryString
+        else { return path }
+        return "\(path)?\(queryString)"
+    }
+    
+    /// Database is a singleton, so unit tests retain between tests.
+    ///
+    /// Reset allows opportunity to dispose and reset stored listeners.
+    func reset(){
+        self.listeners = [:]
+    }
+    
+    /// Returns true if there are any active (non-disposed) listeners
+    var hasActiveListener: Bool {
+        for listener in self.listeners.values {
+            guard listener.0.isComplete
+            else { return true }
+        }
+        return false
+    }
+    
+    /// The integer count of all non-disposed listeners.
+    var activeListenerCount: Int {
+        var i: Int = 0
+        for listener in self.listeners.values {
+            guard !listener.0.isComplete
+            else { continue }
+            i += 1
+        }
+        return i
+    }
 }
 
 // MARK: -

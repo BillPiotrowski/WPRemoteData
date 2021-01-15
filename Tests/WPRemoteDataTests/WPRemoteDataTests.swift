@@ -1,32 +1,38 @@
 import XCTest
 @testable import WPRemoteData
+import ReactiveSwift
 
 
 
 
 
 final class WPRemoteDataTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        
+    private var disposable1: Disposable? = nil
+    private var disposable2: Disposable? = nil
+    private let testLocation = TestLocation()
+    private lazy var ref: DummyCollectionReference = { testLocation.collectionReference as! DummyCollectionReference
+    }()
+    
+    
+    override func tearDownWithError() throws {
+    }
+    
+    func testLocationPath() throws {
         let testLocation = TestLocation()
-        testLocation.getAll().done{ _ in
-            
-        }.catch { _ in
-            
-        }
-        let disposable = testLocation.addListener()
-        let collectionRef = testLocation.collectionReference as! DummyCollectionReference
-        XCTAssert(collectionRef.hasListener)
-        disposable.disposable.remove()
-        XCTAssert(!collectionRef.hasListener)
+        testLocation.getAll().then {_ in}.catch{_ in}
         XCTAssert(testLocation.path == "testCollection")
+    }
+    
+    func testDocumentPath() throws {
+        let testDataID = TestLocation().generateDocumentID()
+        let testDoc = TestDocument(testDataID: testDataID)
+        
+        XCTAssert(testDoc.path == "testCollection/\(testDataID)")
     }
     
     func testQueryString() throws {
         let testLocation = TestLocation()
+        
         
         let filters = [
             WhereFilter("property1", .isEqualTo, nil),
@@ -35,16 +41,18 @@ final class WPRemoteDataTests: XCTestCase {
             WhereFilter("property4", .isLessThan, "value4"),
             WhereFilter("property5", .isLessThanOrEqualTo, 0),
         ]
-        testLocation.getAll(filters: filters)
-            .done{_ in}.catch{ _ in}
+        testLocation.getAll(filters: filters).then {_ in}.catch{_ in}
+//        testLocation.getAllData(filters: filters)
+//            .then{_ in}.catch{ _ in}
         
         let collectionRef = testLocation.collectionReference as! DummyCollectionReference
         
-        XCTAssert(collectionRef.relativeURL == "testCollection?property1==<null>&property2>value2&property3>=value3&property4<value4&property5<=0")
+        XCTAssert(collectionRef.relativeURLString == "testCollection?property1==<null>&property2>value2&property3>=value3&property4<value4&property5<=0")
         
     }
-
+    
+    
     static var allTests = [
-        ("testExample", testExample),
+        ("testQueryString", testQueryString),
     ]
 }

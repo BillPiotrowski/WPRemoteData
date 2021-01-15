@@ -15,6 +15,10 @@ class DummyDatabase {
     private init() {
     }
 }
+
+
+// MARK: -
+// MARK: CONFORM: DatabaseInterface
 extension DummyDatabase: DatabaseInterface {
     func collectionInterface(_ path: String) -> CollectionReferenceInterface {
         guard let collection = collectionReferences[path]
@@ -28,19 +32,15 @@ extension DummyDatabase: DatabaseInterface {
 }
 
 
-
-
 // MARK: -
-// MARK: DISPOSABLE
-class DummyDisposable: NSObject {
-    private let removeCallback: ()->Void
-    init(removeCallback: @escaping ()->Void){
-        self.removeCallback = removeCallback
-    }
-}
-extension DummyDisposable: ListenerRegistrationInterface {
-    func remove() {
-        self.removeCallback()
+// MARK: TESTING HELPERS
+extension DummyDatabase {
+    /// Unit tests seem to retain same Database between tests. Reset allows opportunity to reset stored collections and set to empty.
+    func reset(){
+        for (key, ref) in self.collectionReferences {
+            ref.reset()
+        }
+        self.collectionReferences = [:]
     }
 }
 

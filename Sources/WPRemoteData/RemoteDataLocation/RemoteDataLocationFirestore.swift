@@ -9,6 +9,7 @@
 import FirebaseFirestore
 import PromiseKit
 import ReactiveSwift
+import Promises
 
 // MARK: COLLECTION REF
 extension RemoteDataLocation {
@@ -30,9 +31,9 @@ extension RemoteDataLocation {
 //        return database.collection(path)
     }
 }
-
+// MARK: DEFAULT
 extension RemoteDataLocation {
-    static var database: DatabaseInterface { Firestore.firestore() }
+    public static var database: DatabaseInterface { Firestore.firestore() }
 }
 
 
@@ -41,7 +42,6 @@ extension RemoteDataLocation {
     
     /// Generates a unique ID for the location without the need to send a server request.
     public func generateDocumentID() -> String {
-        
         return collectionReferenceInterface.documentInterface().documentID
     }
 }
@@ -52,93 +52,84 @@ extension RemoteDataLocation {
 // MARK: GETALL
 extension RemoteDataLocation {
     
-    // SHOULD BE INTERNAL because uses Query from Firebase??
-    internal static func getAll(
-        query: QueryInterface,
-        remoteDataLocation: RemoteDataLocation
-    ) -> Promise<[ReadableRemoteData]> {
-        return Promise { seal in
-            query.getDocumentsInterface(){ response, queryError in
-                do {
-                    let readableRemoteDataArray = try remoteDataLocation.makeReadableRemoteDataFrom(
-                            querySnapshot: response
-                    )
-                    seal.fulfill(readableRemoteDataArray)
-                } catch {
-                    seal.reject(queryError ?? error)
-                }
+    @available(*, deprecated, message: "Use new database model.")
+    /// Get all documents that apply to query. If one document does not initialize correctly, the entire array fails.
+    public func getAllDocs(
+        filters: [WhereFilter]? = nil
+    ) -> Promises.Promise<[RemoteDataDocument]> {
+        let query: QueryInterface = self.collectionReference.getQuery(
+            from: filters
+        )
+        return query.getAll().then {
+            return $0.documentsInterface.map {
+                doc -> RemoteDataDocument in
+                return RemoteDataDocument(
+                    document: doc,
+                    folder: self
+                )
             }
         }
     }
-    /// Get all documents that apply to query. If one document does not initialize correctly, the entire array fails.
-    static func getAll(
-        remoteDataTypeFolder: RemoteDataLocation,
+    
+    @available(*, deprecated, message: "Use new database model.")
+    /// Gets all document data.
+    public func getAllData(
         filters: [WhereFilter]? = nil
-    ) -> Promise<[ReadableRemoteData]> {
-        //print("GET ALL 3.1")
-        let collectionReference = remoteDataTypeFolder.collectionReference
-        let query = Self.makeQueryFrom(
-            collectionReference: collectionReference,
-            filters: filters
-        )
-        return Self.getAll(
-            query: query,
-            remoteDataLocation: remoteDataTypeFolder
-        )
-    }
-    /// Get all documents that apply to query. If one document does not initialize correctly, the entire array fails.
-    public func getAll(
-        filters: [WhereFilter]? = nil
-    ) -> Promise<[ReadableRemoteData]> {
-        return Self.getAll(
-            remoteDataTypeFolder: self,
-            filters: filters
-        )
+    ) -> Promises.Promise<[ReadableRemoteData]> {
+        return self.getAllDocs(filters: filters).then {
+            return try $0.map{ doc -> ReadableRemoteData in
+                try self.makeReadableRemoteDataFrom(document: doc)
+            }
+        }
     }
 }
 
-
+// MARK: -
 // MARK: ADD LISTENER
 extension RemoteDataLocation {
     //@available(*, deprecated, message: "use addListener() -> Signal")
-    static func addListener(
-        remoteDataFolder: RemoteDataLocation
-    ) -> RemoteDataLocationListenerResponse {
-        let signal = Signal<GetAllResponse, Never>.pipe()
-        let disposable = remoteDataFolder.collectionReference.addSnapshotListenerInterface {
-            (querySnapshot, error) in
-            
-            let response = GetAllResponse(
-                querySnapshot: querySnapshot,
-                error: error,
-                serverLocation: remoteDataFolder
-            )
-            signal.input.send(value: response)
-        }
-        return (signal.output, disposable)
-    }
+//    static func addListener(
+//        remoteDataFolder: RemoteDataLocation
+//    ) -> RemoteDataLocationListenerResponse {
+//        let signal = Signal<GetAllResponse, Never>.pipe()
+//        let disposable = remoteDataFolder.collectionReference.addSnapshotListenerInterface {
+//            (querySnapshot, error) in
+//            
+//            let response = GetAllResponse(
+//                querySnapshot: querySnapshot,
+//                error: error,
+//                serverLocation: remoteDataFolder
+//            )
+//            signal.input.send(value: response)
+//        }
+//        return (signal.output, disposable)
+//    }
     
-    public func addListener() -> RemoteDataLocationListenerResponse {
-        return Self.addListener(remoteDataFolder: self)
-    }
-
-    // MAY WANT TO CHANGE TO Signal<[GetAllResponse], Error> or Signal<[ReadableRemoteData, Error>
-    public typealias RemoteDataLocationListenerResponse = (
-        observer: Signal<GetAllResponse, Never>,
-        disposable: ListenerDisposable
-    )
+//    public func addListener() -> RemoteDataLocationListenerResponse {
+//        return Self.addListener(remoteDataFolder: self)
+//    }
+//
+//    // MAY WANT TO CHANGE TO Signal<[GetAllResponse], Error> or Signal<[ReadableRemoteData, Error>
+//    public typealias RemoteDataLocationListenerResponse = (
+//        observer: Signal<GetAllResponse, Never>,
+//        disposable: ListenerDisposable
+//    )
 }
 
 
 
 
 
+// MARK: -
 // MARK: T VERSION
+// This should all be removed eventually and replaced with new database model.
+
+@available(*, deprecated, message: "Use new database model.")
 extension RemoteDataLocation {
     internal static func getAll<T: ReadableRemoteData>(
         query: QueryInterface,
         remoteDataLocation: RemoteDataLocation
-    ) -> Promise<[T]> {
+    ) -> PromiseKit.Promise<[T]> {
         return Promise { seal in
             query.getDocumentsInterface(){ response, queryError in
                 do {
@@ -152,33 +143,35 @@ extension RemoteDataLocation {
             }
         }
     }
+    
+    @available(*, deprecated, message: "Use new database model.")
     static func getAll<T: ReadableRemoteData>(
         remoteDataTypeFolder: RemoteDataLocation,
         filters: [WhereFilter]? = nil
-    ) -> Promise<[T]> {
-        //print("GET ALL 3.1")
-        let collectionReference = remoteDataTypeFolder.collectionReference
-        let query = Self.makeQueryFrom(
-            collectionReference: collectionReference,
-            filters: filters
+    ) -> PromiseKit.Promise<[T]> {
+        let query: QueryInterface = remoteDataTypeFolder.collectionReference.getQuery(
+            from: filters
         )
         return Self.getAll(
             query: query,
             remoteDataLocation: remoteDataTypeFolder
         )
     }
+    
+    @available(*, deprecated, message: "Use new database model.")
     public func getAll<T: ReadableRemoteData>(
         filters: [WhereFilter]? = nil
-    ) -> Promise<[T]> {
+    ) -> PromiseKit.Promise<[T]> {
         return Self.getAll(
             remoteDataTypeFolder: self,
             filters: filters
         )
     }
     
+    @available(*, deprecated, message: "Use new database model.")
     public static func getAll<T: ReadableRemoteData>(
         remoteDataFolder: RemoteDataLocation
-    ) -> Promise<[T]> {
+    ) -> PromiseKit.Promise<[T]> {
         let query = remoteDataFolder.collectionReference
         return Self.getAll(
             query: query,
@@ -186,35 +179,34 @@ extension RemoteDataLocation {
         )
     }
     
+    @available(*, deprecated, message: "Use new database model.")
     public static func getAllWhere<T: ReadableRemoteData>(
         remoteDataFolder: RemoteDataLocation,
         field: String,
         isEqualTo: Any
-    ) -> Promise<[T]> {
+    ) -> PromiseKit.Promise<[T]> {
         let query = remoteDataFolder.collectionReference.whereFieldInterface(
             [field],
             isEqualTo: isEqualTo
         )
-//        let query = remoteDataFolder.collectionReference.whereField(
-//            field,
-//            isEqualTo: isEqualTo
-//        )
         return Self.getAll(
             query: query,
             remoteDataLocation: remoteDataFolder
         )
     }
 
-    public func getAll<T: ReadableRemoteData>() -> Promise<[T]> {
+    @available(*, deprecated, message: "Use new database model.")
+    public func getAll<T: ReadableRemoteData>() -> PromiseKit.Promise<[T]> {
         return Self.getAll(
             remoteDataFolder: self
         )
     }
     
+    @available(*, deprecated, message: "Use new database model.")
     public func getAllWhere<T: ReadableRemoteData>(
         field: String,
         isEqualTo: Any
-    ) -> Promise<[T]> {
+    ) -> PromiseKit.Promise<[T]> {
         return Self.getAllWhere(
             remoteDataFolder: self,
             field: field,
