@@ -37,7 +37,7 @@ extension DummyDatabase: DatabaseInterface {
 extension DummyDatabase {
     /// Unit tests seem to retain same Database between tests. Reset allows opportunity to reset stored collections and set to empty.
     func reset(){
-        for (key, ref) in self.collectionReferences {
+        for (_, ref) in self.collectionReferences {
             ref.reset()
         }
         self.collectionReferences = [:]

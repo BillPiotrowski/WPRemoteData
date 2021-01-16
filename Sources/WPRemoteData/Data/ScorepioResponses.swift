@@ -20,8 +20,8 @@ import Foundation
 ///
 /// Could also attempt to lazily render the data or documents in the future so only what is required gets generated.
 public struct ScorepioQueryResponse<
-    T: RemoteDataReference,
-    D: RemoteDataGeneric
+    T: RemoteDataDocument,
+    D: RemoteData
 > {
     public let documents: [ScorepioDocumentResponse<T,D>]
 }
@@ -46,8 +46,8 @@ extension ScorepioQueryResponse {
 ///
 /// Could also attempt to lazily render the data or documents in the future so only what is required gets generated.
 public struct ScorepioDocumentResponse<
-    T: RemoteDataReference,
-    D: RemoteDataGeneric
+    T: RemoteDataDocument,
+    D: RemoteData
 > {
     public let reference: T
     public let data: D

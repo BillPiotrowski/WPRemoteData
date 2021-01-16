@@ -11,7 +11,7 @@ final class GetAllListenableTests: XCTestCase {
     private var disposable1: Disposable? = nil
     private var disposable2: Disposable? = nil
     private let testLocation = TestLocation()
-    private lazy var ref: DummyCollectionReference = { testLocation.collectionReference as! DummyCollectionReference
+    private lazy var ref: DummyCollectionReference = { testLocation.collectionReferenceInterface as! DummyCollectionReference
     }()
     private lazy var database: DummyDatabase = {
         TestLocation.database as! DummyDatabase
@@ -43,8 +43,8 @@ final class GetAllListenableTests: XCTestCase {
         
         XCTAssert(!ref.hasActiveListener)
         
-        let (_, signal1) = testLocation.collectionReference.addListener()
-        let (_, signal2) = testLocation.collectionReference.addListener()
+        let (_, signal1) = testLocation.collectionReferenceInterface.addListener()
+        let (_, signal2) = testLocation.collectionReferenceInterface.addListener()
         
         
         self.disposable1 = signal1.observeValues{ _ in
@@ -81,8 +81,8 @@ final class GetAllListenableTests: XCTestCase {
         
         XCTAssert(!ref.hasActiveListener)
         
-        let (listener1, signal1) = testLocation.collectionReference.addListener()
-        let (_, signal2) = testLocation.collectionReference.addListener()
+        let (listener1, signal1) = testLocation.collectionReferenceInterface.addListener()
+        let (_, signal2) = testLocation.collectionReferenceInterface.addListener()
         
         
         self.disposable1 = signal1.observeValues{ _ in
@@ -120,7 +120,7 @@ final class GetAllListenableTests: XCTestCase {
         
         XCTAssert(!ref.hasActiveListener)
         
-        let (listener1, signal1) = testLocation.collectionReference.addListener()
+        let (listener1, signal1) = testLocation.collectionReferenceInterface.addListener()
         
         self.disposable1 = signal1.observeValues{ _ in
             listener1.remove()
@@ -153,7 +153,7 @@ final class GetAllListenableTests: XCTestCase {
         var (_, signal1): (
             ListenerRegistrationInterface,
             (Signal<(QuerySnapshotInterface?, Error?), Never>)?
-        )  = testLocation.collectionReference.addListener()
+        )  = testLocation.collectionReferenceInterface.addListener()
         
         XCTAssert(ref.hasActiveListener)
         

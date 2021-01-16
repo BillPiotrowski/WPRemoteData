@@ -8,6 +8,9 @@
 import Foundation
 import Promises
 
+/// - note:Not sure how necessary this is because callers would likely just use the actual doc reference insead of navigating via parent folder.
+///
+/// Will need to build out duplicates of this in the future if it is useful.
 public protocol RemoteDataLocationStaticChild1: RemoteDataLocation {
     associatedtype Static1: RemoteDataStaticReference
     var staticChild1: Static1 { get }
@@ -16,7 +19,7 @@ public protocol RemoteDataLocationStaticChild1: RemoteDataLocation {
 extension RemoteDataLocation where
     Self: RemoteDataLocationStaticChild1,
     Self == Static1.Location,
-    Static1 == Static1.Data.Reference
+    Static1 == Static1.Data.RemoteDoc
 {
     public func getChild1(
     ) -> Promise<ScorepioDocumentResponse<Static1,Static1.Data>> {

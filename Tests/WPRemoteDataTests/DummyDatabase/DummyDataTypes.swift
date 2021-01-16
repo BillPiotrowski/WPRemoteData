@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SPCommon
 @testable import WPRemoteData
 
 // MARK: -
@@ -16,11 +17,11 @@ struct TestLocation {
 extension TestLocation: RemoteDataLocation {
     public static let name = "testCollection"
     
-    func makeRemoteDataReference(
-        document: RemoteDataDocument
-    ) -> RemoteDataReference {
-        return TestDocument(testDataID: document.documentID)
-    }
+//    func makeRemoteDataReference(
+//        document: RemoteDataDocument
+//    ) -> RemoteDataReference {
+//        return TestDocument(testDataID: document.documentID)
+//    }
     
 }
 extension TestLocation {
@@ -37,17 +38,17 @@ extension TestLocation: RemoteDataLocationVariableChild {
 struct TestDocument {
     let testDataID: String
 }
-extension TestDocument: RemoteDataReference {
+extension TestDocument: RemoteDataDocument {
     var documentID: String { testDataID }
     
     
-    func readableRemoteDataType(
-        remoteDataDocument: RemoteDataDocument
-    ) -> ReadableRemoteData.Type {
-        TestData.self
-    }
+//    func readableRemoteDataType(
+//        remoteDataDocument: RemoteDataDocument
+//    ) -> ReadableRemoteData.Type {
+//        TestData.self
+//    }
 }
-extension TestDocument: RemoteDataReferenceGeneric {
+extension TestDocument: GettableRemoteDataDocument {
     typealias Data = TestData
     
     var location: TestLocation {
@@ -66,10 +67,10 @@ struct TestData {
     let testDataID: String
     
 }
-extension TestData: ReadableRemoteData {
-    init(remoteDataDocument: RemoteDataDocument) throws {
-        self.init(testDataID: remoteDataDocument.documentID)
-    }
+extension TestData {
+//    init(remoteDataDocument: RemoteDataDocument) throws {
+//        self.init(testDataID: remoteDataDocument.documentID)
+//    }
     
     init(dictionary: [String : Any]) throws {
         guard let testDataID = dictionary["testDataID"] as? String
@@ -77,25 +78,25 @@ extension TestData: ReadableRemoteData {
         self.init(testDataID: testDataID)
     }
     
-    var dictionary: [String : Any] {
-        return [:]
-    }
-    
-    var remoteDataReference: RemoteDataReference {
-        return TestDocument(testDataID: testDataID)
-    }
     
     
 }
-extension TestData: RemoteDataGeneric {
+
+// As long as it's writeable, this data can save.
+extension TestData: WriteableData {
+    var dictionary: [String : Any] {
+        return [:]
+    }
+}
+extension TestData: RemoteData {
     init(
-        remoteDataReference: TestDocument,
+        remoteDocument: TestDocument,
         dictionary: [String : Any]
     ) throws {
-        self.init(testDataID: remoteDataReference.testDataID)
+        self.init(testDataID: remoteDocument.testDataID)
     }
     
-    var reference: TestDocument {
+    var remoteDocument: TestDocument {
         TestDocument(testDataID: testDataID)
     }
     

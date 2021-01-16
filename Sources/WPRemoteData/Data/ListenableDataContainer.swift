@@ -7,7 +7,7 @@
 //
 
 import ReactiveSwift
-
+import SPCommon
 
 /*
 public class ListenableDataContainer<T: RemoteDataReference,
@@ -51,8 +51,8 @@ extension ListenableDataContainer where
 
 
 public class ListenableDataContainer<
-    Data: RemoteDataGeneric,
-    RemoteDoc: RemoteDataReferenceGeneric
+    Data: RemoteData,
+    RemoteDoc: GettableRemoteDataDocument
 > {
     private static var savingType: SavingType { return .server }
     private let savingType: SavingType
@@ -66,7 +66,7 @@ public class ListenableDataContainer<
         savingType: SavingType,
         userPipe: Signal<Data, Never>.Observer,
         mergedProperty: Property<Data>,
-        disposable: ListenerDisposable?
+        disposable: ListenerRegistrationInterface?
     ){
         self.savingType = savingType
         self.userPipe = userPipe
@@ -85,10 +85,11 @@ extension ListenableDataContainer where
     //    Self.Data.Reference == Self
 //    T == D.Reference,
 //    T.Data == D
-    Data.Reference == RemoteDoc,
-    RemoteDoc: RemoteDataReferenceGeneric,
+    Data.RemoteDoc == RemoteDoc,
+    RemoteDoc: GettableRemoteDataDocument,
     RemoteDoc.Data == Data,
-    Data: ListenableRemoteData
+//    Data: ListenableRemoteData,
+    Data: WriteableData
     
 {
     public convenience init(
@@ -109,7 +110,7 @@ extension ListenableDataContainer where
         // NOT NECESSARY WITH NEW INJECTABLE TESTING
         let disposable: ListenerRegistrationInterface?
         if !forTesting {
-            let rawServerResponse = initialData.reference.addListener()
+            let rawServerResponse = initialData.remoteDocument.addListener()
             
             
             
@@ -187,7 +188,7 @@ extension ListenableDataContainer where
         switch self.savingType {
         case .server:
             userSessionData.remoteSave()
-            .done{ _ in
+            .then{ _ in
                 //print("SAVED SESSION 2")
             }
             .catch{ error in
@@ -253,7 +254,7 @@ extension ListenableDataReturnItem: Equatable where
 }
 */
 
-public struct ListenableDataReturnItem<T: ListenableRemoteData>: Equatable {
+public struct ListenableDataReturnItem<T: RemoteData>: Equatable {
     let newData: T
     let fromDatabaseListener: Bool
 }

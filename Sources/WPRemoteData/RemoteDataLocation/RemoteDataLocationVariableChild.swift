@@ -14,13 +14,13 @@ import ReactiveSwift
 /// - warning: Ideally, there would not be any static children either when a variable child is defined. Could still work in theory, but would have a minor risk of overlap and is not clean architecturally.
 public protocol RemoteDataLocationVariableChild: RemoteDataLocation {
     /// The child `RemoteDataReferenceGeneric` that is found in this location.
-    associatedtype A: RemoteDataReferenceGeneric
+    associatedtype A: GettableRemoteDataDocument
 }
 
 extension RemoteDataLocation where
     Self: RemoteDataLocationVariableChild,
     Self == Self.A.Location,
-    Self.A == Self.A.Data.Reference
+    Self.A == Self.A.Data.RemoteDoc
 {
     /// Gets all documents from the remote server at this `RemoteDataLocation` that satisfy the filter requirements.
     /// - Parameter filters: WhereFilters that are used to specify the server request.
@@ -28,7 +28,7 @@ extension RemoteDataLocation where
     ///
     /// Response also contain specific `ReadableData` that are associated with `RemoteDataReference`.
     public func getAll(filters: [WhereFilter]? = nil) -> Promise<ScorepioQueryResponse<A,A.Data>>{
-        let query = self.collectionReference.getQuery(
+        let query = self.collectionReferenceInterface.getQuery(
             from: filters
         )
         return query.getAll().then {
@@ -48,7 +48,7 @@ extension RemoteDataLocation where
         ListenerRegistrationInterface,
         Signal<(ScorepioQueryResponse<A,A.Data>?, Error?), Never>
     ){
-        let query = self.collectionReference.getQuery(
+        let query = self.collectionReferenceInterface.getQuery(
             from: filters
         )
         let (disposable, signal) = query.addListener()

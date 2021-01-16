@@ -10,7 +10,7 @@ final class WPRemoteDataTests: XCTestCase {
     private var disposable1: Disposable? = nil
     private var disposable2: Disposable? = nil
     private let testLocation = TestLocation()
-    private lazy var ref: DummyCollectionReference = { testLocation.collectionReference as! DummyCollectionReference
+    private lazy var ref: DummyCollectionReference = { testLocation.collectionReferenceInterface as! DummyCollectionReference
     }()
     
     
@@ -45,7 +45,7 @@ final class WPRemoteDataTests: XCTestCase {
 //        testLocation.getAllData(filters: filters)
 //            .then{_ in}.catch{ _ in}
         
-        let collectionRef = testLocation.collectionReference as! DummyCollectionReference
+        let collectionRef = testLocation.collectionReferenceInterface as! DummyCollectionReference
         
         XCTAssert(collectionRef.relativeURLString == "testCollection?property1==<null>&property2>value2&property3>=value3&property4<value4&property5<=0")
         

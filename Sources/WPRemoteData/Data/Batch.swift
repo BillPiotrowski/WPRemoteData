@@ -8,6 +8,7 @@
 
 import FirebaseFirestore
 import PromiseKit
+import SPCommon
 
 public struct WriteBatchScorepio {
     internal static let db = Firestore.firestore()
@@ -22,7 +23,7 @@ public struct WriteBatchScorepio {
 // MARK: ADD TO BATCH
 extension WriteBatchScorepio {
     public func setData(
-        remoteDataReference: RemoteDataReference,
+        remoteDataReference: RemoteDataDocument,
         dictionary: [String: Any]
     ){
         batch.setDataInterface(
@@ -30,17 +31,17 @@ extension WriteBatchScorepio {
             forDocument: remoteDataReference.documentReference
         )
     }
-    public func setData(
-        writeableRemoteData: WriteableRemoteData
-    ){
+    public func setData<T: RemoteData>(
+        writeableRemoteData: T
+    ) where T: WriteableData {
         self.setData(
-            remoteDataReference: writeableRemoteData.remoteDataReference,
+            remoteDataReference: writeableRemoteData.remoteDocument,
             dictionary: writeableRemoteData.dictionary
         )
     }
     
     public func updateData(
-        remoteDataReference: RemoteDataReference,
+        remoteDataReference: RemoteDataDocument,
         dictionarySubset: [String: Any]
     ){
         batch.updateDataInterface(
@@ -49,12 +50,14 @@ extension WriteBatchScorepio {
         )
     }
     
-    public func deleteDocument(remoteDataReference: RemoteDataReference){
+    public func deleteDocument(remoteDataReference: RemoteDataDocument){
         batch.deleteDocumentInterface(remoteDataReference.documentReference)
     }
-    public func deleteDocument(remoteData: RemoteData){
+    public func deleteDocument<Data: RemoteData>(
+        remoteData: Data
+    ){
         self.deleteDocument(
-            remoteDataReference: remoteData.remoteDataReference
+            remoteDataReference: remoteData.remoteDocument
         )
     }
 }

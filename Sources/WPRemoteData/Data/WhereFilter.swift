@@ -42,9 +42,6 @@ public struct WhereFilter {
         return FieldPath(fieldStrings)
     }
     
-//    public func applyTo(query: QueryInterface) -> QueryInterface {
-//        return WhereOperator.apply(filter: self, toQuery: query)
-//    }
 }
 
 
@@ -55,22 +52,5 @@ public enum WhereOperator: String {
     case isGreaterThan = ">"
     case isGreaterThanOrEqualTo = ">="
     
-//    static func apply(
-//        filter: WhereFilter,
-//        toQuery: QueryInterface
-//    ) -> QueryInterface {
-//        switch filter.whereOperator {
-//        case .isEqualTo:
-//            return toQuery.whereFieldInterface(filter.fieldStrings, isEqualTo: filter.value as Any)
-//        case .isGreaterThan:
-//            return toQuery.whereFieldInterface(filter.fieldStrings, isGreaterThan: filter.value as Any)
-//        case .isGreaterThanOrEqualTo:
-//            return toQuery.whereFieldInterface(filter.fieldStrings, isGreaterThanOrEqualTo: filter.value as Any)
-//        case .isLessThan:
-//            return toQuery.whereFieldInterface(filter.fieldStrings, isLessThan: filter.value as Any)
-//        case .isLessThanOrEqualTo:
-//            return toQuery.whereFieldInterface(filter.fieldStrings, isLessThanOrEqualTo: filter.value as Any)
-//        }
-//    }
 }
 

@@ -30,6 +30,7 @@ extension DocumentReferenceInterface {
     }
 }
 
+// MARK: - LISTENER
 extension DocumentReferenceInterface {
     /// - seealso: See `QueryInterface` -> `AddListener` for more information about testing and Disposables.
     func addListener() ->
@@ -49,5 +50,26 @@ extension DocumentReferenceInterface {
         }
         
         return (disposable, pipe.output)
+    }
+}
+
+
+// MARK: - SET
+extension DocumentReferenceInterface {
+    /// Save to remote.
+    ///
+    /// Promise wrapping the native `setData(dictionary: completion:)` method.
+    func save(
+        dictionary: [String: Any]
+    ) -> Promise<Void> {
+        return Promise { fulfill, reject in
+            self.setData(dictionary){
+                if let error = $0 {
+                    reject(error)
+                    return
+                }
+                fulfill(())
+            }
+        }
     }
 }

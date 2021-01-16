@@ -12,6 +12,7 @@ public protocol RemoteDataItem {
     /// The name of the collection or reference.
     var name: String { get }
     
+    // NECESSARY TO DEFINE HERE, IF ALSO BELOW?
     /// The path array of the parent collection or parent reference.
     ///
     /// Does not include the name of this element, but does include the name of the parent.
