@@ -18,12 +18,14 @@ public protocol RemoteDataLocation: RemoteDataItem {
     static var name: String { get }
     
     /// The optional parent. This would be used to generate the path. If no parent is set, collection will exist in the root directory.
+    ///
+    /// In the future, this could be generic, but not sure that is necessary. Would allow to traverse database more, but seems unnessary.
     var parentReference: RemoteDataReference? { get }
     
     // This should be removed at some point
-    func makeRemoteDataReference(
-        document: RemoteDataDocument
-    ) -> RemoteDataReference
+//    func makeRemoteDataReference(
+//        document: RemoteDataDocument
+//    ) -> RemoteDataReference
     
     static var database: DatabaseInterface { get }
 }
@@ -106,7 +108,7 @@ extension RemoteDataLocation {
 
 
 
-
+/*
 extension RemoteDataLocation {
     // THROWS IF THERE IS A SINGLE ERROR IN DOCS
     /// Converts the response from a Cloud Firestore QuerySnapshot into and array of ReadableRemoteData. Throws error if there is a problem with any single file.
@@ -139,3 +141,4 @@ extension RemoteDataLocation {
         return try T(remoteDataDocument: document)
     }
 }
+*/

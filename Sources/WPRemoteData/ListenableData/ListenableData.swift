@@ -16,7 +16,7 @@ public protocol ListenableRemoteData: ReadableRemoteData, WriteableRemoteData, E
 
 // MARK: LISTENER
 extension ListenableRemoteData {
-    
+    /*
     public static func remoteAddListenerNoError(
         remoteDataReference: RemoteDataReference
     ) -> RemoteDataListenerNoError {
@@ -29,6 +29,7 @@ extension ListenableRemoteData {
             remoteDataReference: remoteDataReference
         )
     }
+     */
     public typealias RemoteDataListenerNoError = (
         disposable: ListenerDisposable,
         observer: Signal<ServerListenerResponse<Self>, Never>
@@ -38,7 +39,7 @@ extension ListenableRemoteData {
     
     
     
-    
+    /*
     public static func remoteAddListener(
         remoteDataReference: RemoteDataReference
     ) -> RemoteDataListener {
@@ -70,6 +71,7 @@ extension ListenableRemoteData {
             remoteDataReference: remoteDataReference
         )
     }
+     */
     
     /// Returns a Signal and ListenerDisposable. The disposable is for the server listener and is different from ReactiveSwift Disposables.
     public typealias RemoteDataListener = (

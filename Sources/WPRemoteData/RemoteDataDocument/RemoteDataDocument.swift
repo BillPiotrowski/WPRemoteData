@@ -29,6 +29,7 @@ public struct RemoteDataDocument {
     public var documentID: String {
         return document.documentID
     }
+    /*
     public func makeReadableRemoteData(
     ) throws -> ReadableRemoteData {
         return try folder.makeReadableRemoteDataFrom(document: self)
@@ -41,9 +42,9 @@ public struct RemoteDataDocument {
         )
         */
     }
-    
+    */
     // Not currently using, but could be useful?
-    public var remoteDataReference: RemoteDataReference {
-        return folder.makeRemoteDataReference(document: self)
-    }
+//    public var remoteDataReference: RemoteDataReference {
+//        return folder.makeRemoteDataReference(document: self)
+//    }
 }

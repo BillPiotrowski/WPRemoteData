@@ -10,7 +10,7 @@ import FirebaseFirestore
 
 // MARK: HELPER METHODS
 extension RemoteDataLocation {
-    
+    /*
     // THROWS IF THERE IS A SINGLE ERROR IN DOCS
     /// Converts the response from a Cloud Firestore QuerySnapshot into and array of ReadableRemoteData. Throws error if there is a problem with any single file.
     internal static func makeReadableRemoteDataFrom(
@@ -32,7 +32,8 @@ extension RemoteDataLocation {
         }
         return readableRemoteData
     }
-    
+    */
+    /*
     internal static func makeReadableRemoteDataFrom<T: ReadableRemoteData>(
         remoteDataTypeFolder: RemoteDataLocation,
         querySnapshot: QuerySnapshotInterface?
@@ -50,7 +51,8 @@ extension RemoteDataLocation {
         }
         return readableRemoteDataArray
     }
-    
+ */
+    /*
     /// Converts the response from a Cloud Firestore QuerySnapshot into and array of ReadableRemoteData. Throws error if there is a problem with any single file.
     internal func makeReadableRemoteDataFrom(
         querySnapshot: QuerySnapshotInterface?
@@ -60,6 +62,8 @@ extension RemoteDataLocation {
             querySnapshot: querySnapshot
         )
     }
+ */
+    /*
     internal func makeReadableRemoteDataArrayFrom<T: ReadableRemoteData>(
         querySnapshot: QuerySnapshotInterface?
     ) throws -> [T] {
@@ -68,7 +72,7 @@ extension RemoteDataLocation {
             querySnapshot: querySnapshot
         )
     }
-    
+    */
     /// Creates a usable Cloud Firestore Query from a CollectionReference and filters
 //    internal static func makeQueryFrom(
 //        collectionReference: CollectionReferenceInterface,

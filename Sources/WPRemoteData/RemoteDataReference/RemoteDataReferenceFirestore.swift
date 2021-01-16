@@ -20,37 +20,37 @@ extension RemoteDataReference {
 
 // MARK: GET PROMISE
 extension RemoteDataReference {
-    static func get (
-        initializableData: RemoteDataReference
-    ) -> Promise<ReadableRemoteData> {
-        return Promise { seal in
-            initializableData.documentReference.getDocumentInterface {
-                documentSnapshot, getError in
-
-                do {
-
-                    guard let documentSnapshot = documentSnapshot
-                        else { throw RemoteDataReferenceError.documentDoesNotExist(
-                            serverDocument: initializableData
-                        )
-                    }
-                    let document = RemoteDataDocument(
-                        document: documentSnapshot,
-                        folder: initializableData.remoteDataLocation
-                    )
-                    let readableRemoteData = try document.makeReadableRemoteData()
-                    
-                    seal.fulfill(readableRemoteData)
-                } catch {
-                    seal.reject(getError ?? error)
-                }
-            }
-        }
-    }
+//    static func get (
+//        initializableData: RemoteDataReference
+//    ) -> Promise<ReadableRemoteData> {
+//        return Promise { seal in
+//            initializableData.documentReference.getDocumentInterface {
+//                documentSnapshot, getError in
+//
+//                do {
+//
+//                    guard let documentSnapshot = documentSnapshot
+//                        else { throw RemoteDataReferenceError.documentDoesNotExist(
+//                            serverDocument: initializableData
+//                        )
+//                    }
+//                    let document = RemoteDataDocument(
+//                        document: documentSnapshot,
+//                        folder: initializableData.remoteDataLocation
+//                    )
+//                    let readableRemoteData = try document.makeReadableRemoteData()
+//
+//                    seal.fulfill(readableRemoteData)
+//                } catch {
+//                    seal.reject(getError ?? error)
+//                }
+//            }
+//        }
+//    }
     
-    public func get() -> Promise <ReadableRemoteData> {
-        return Self.get(initializableData: self)
-    }
+//    public func get() -> Promise <ReadableRemoteData> {
+//        return Self.get(initializableData: self)
+//    }
 }
 
 // MARK: ADD LISTENER
@@ -63,7 +63,7 @@ public enum ServerListenerResponse<T: ListenableRemoteData>{
 }
 
 extension RemoteDataReference {
-    
+    /*
     static func addListenerNoError<T: ListenableRemoteData>(
         remoteDataProtocol: RemoteDataReference,
         type: T.Type
@@ -107,10 +107,10 @@ extension RemoteDataReference {
         )
     }
     
+    */
     
     
-    
-    
+    /*
     
     // NEED TO TEST. MAKE SURE THAT IT IS HELD ON TO.
     static func addListener<T: ListenableRemoteData>(
@@ -159,7 +159,9 @@ extension RemoteDataReference {
         disposable: ListenerDisposable,
         observer: Signal<ListenableRemoteData, Error>
     )
+ */
 }
+ 
 
 
 // MARK: TIMESTAMP CONVERT

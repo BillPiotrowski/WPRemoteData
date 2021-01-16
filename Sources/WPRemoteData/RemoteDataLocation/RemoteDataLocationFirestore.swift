@@ -52,36 +52,36 @@ extension RemoteDataLocation {
 // MARK: GETALL
 extension RemoteDataLocation {
     
-    @available(*, deprecated, message: "Use new database model.")
-    /// Get all documents that apply to query. If one document does not initialize correctly, the entire array fails.
-    public func getAllDocs(
-        filters: [WhereFilter]? = nil
-    ) -> Promises.Promise<[RemoteDataDocument]> {
-        let query: QueryInterface = self.collectionReference.getQuery(
-            from: filters
-        )
-        return query.getAll().then {
-            return $0.documentsInterface.map {
-                doc -> RemoteDataDocument in
-                return RemoteDataDocument(
-                    document: doc,
-                    folder: self
-                )
-            }
-        }
-    }
+//    @available(*, deprecated, message: "Use new database model.")
+//    /// Get all documents that apply to query. If one document does not initialize correctly, the entire array fails.
+//    public func getAllDocs(
+//        filters: [WhereFilter]? = nil
+//    ) -> Promises.Promise<[RemoteDataDocument]> {
+//        let query: QueryInterface = self.collectionReference.getQuery(
+//            from: filters
+//        )
+//        return query.getAll().then {
+//            return $0.documentsInterface.map {
+//                doc -> RemoteDataDocument in
+//                return RemoteDataDocument(
+//                    document: doc,
+//                    folder: self
+//                )
+//            }
+//        }
+//    }
     
-    @available(*, deprecated, message: "Use new database model.")
-    /// Gets all document data.
-    public func getAllData(
-        filters: [WhereFilter]? = nil
-    ) -> Promises.Promise<[ReadableRemoteData]> {
-        return self.getAllDocs(filters: filters).then {
-            return try $0.map{ doc -> ReadableRemoteData in
-                try self.makeReadableRemoteDataFrom(document: doc)
-            }
-        }
-    }
+//    @available(*, deprecated, message: "Use new database model.")
+//    /// Gets all document data.
+//    public func getAllData(
+//        filters: [WhereFilter]? = nil
+//    ) -> Promises.Promise<[ReadableRemoteData]> {
+//        return self.getAllDocs(filters: filters).then {
+//            return try $0.map{ doc -> ReadableRemoteData in
+//                try self.makeReadableRemoteDataFrom(document: doc)
+//            }
+//        }
+//    }
 }
 
 // MARK: -
@@ -123,7 +123,7 @@ extension RemoteDataLocation {
 // MARK: -
 // MARK: T VERSION
 // This should all be removed eventually and replaced with new database model.
-
+/*
 @available(*, deprecated, message: "Use new database model.")
 extension RemoteDataLocation {
     internal static func getAll<T: ReadableRemoteData>(
@@ -214,3 +214,4 @@ extension RemoteDataLocation {
         )
     }
 }
+*/

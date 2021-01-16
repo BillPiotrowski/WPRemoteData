@@ -19,7 +19,7 @@ public protocol LocallyArchivableRemoteDataReference: RemoteDataReference, Remot
 
 
 // MARK: - DOWNLOADABLE
-public protocol RemoteDataDownloadableDoc: RemoteDataReferenceGeneric, LocallyArchivableRemoteDataReference {
+public protocol RemoteDataDownloadableDoc: RemoteDataReferenceGeneric {
     associatedtype LocalDoc: LocalFileOpenable
     
     var localDoc: LocalDoc { get }

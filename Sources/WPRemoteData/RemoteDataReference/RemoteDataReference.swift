@@ -64,6 +64,7 @@ extension RemoteDataReference {
 
 
 extension RemoteDataReference {
+    /*
     // DEPRECATE AND SIMPLY USE readableRemoteDataType.init()
     private static func makeReadableRemoteDataFrom<T: ReadableRemoteData>(
         remoteDataDocument: RemoteDataDocument
@@ -89,7 +90,6 @@ extension RemoteDataReference {
         )
  */
     }
-    
     // DEPRECATE AND SIMPLY USE readableRemoteDataType.init()
     public func makeReadableRemoteDataFrom<T: ReadableRemoteData>(
         remoteDataDocument: RemoteDataDocument
@@ -105,6 +105,7 @@ extension RemoteDataReference {
             remoteDataDocument: remoteDataDocument
         )
     }
+     */
 }
 
 extension RemoteDataReference {

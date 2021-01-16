@@ -5,7 +5,7 @@
 //  Created by William Piotrowski on 11/18/20.
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
-
+/*
 import SPCommon
 
 public enum RemoteDataLocationError: ScorepioError {
@@ -23,3 +23,4 @@ public enum RemoteDataLocationError: ScorepioError {
         }
     }
 }
+*/

@@ -85,6 +85,7 @@ extension RemoteDataReference where
         return (disposable, mappedSignal)
     }
     
+    
     // MARK: -
     // MARK: HELPERS
     func getData(dictionary: [String: Any]) throws -> Data {
@@ -105,6 +106,23 @@ extension RemoteDataReference where
     }
 }
 
+extension RemoteDataReference where
+    Self: RemoteDataReferenceGeneric,
+    Self.Data.Reference == Self,
+    // THIS NEEDS TO BE REMOVED!!
+    Self.Data: ListenableRemoteData
+{
+    // Could eventually make a protocol that has a default value and this could be automatic.
+    public func listenableDataContainer(
+        initialData: Data,
+        forTesting: Bool? = nil
+    ) -> ListenableDataContainer<Data, Self> {
+        return ListenableDataContainer<Data, Self>(
+            initialData: initialData,
+            forTesting: forTesting
+        )
+    }
+}
 
 
 

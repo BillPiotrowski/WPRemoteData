@@ -12,7 +12,7 @@ import Firebase
 import SPCommon
 
 public protocol ReadableRemoteData: ReadableData, WriteableData, RemoteData {
-    init(remoteDataDocument: RemoteDataDocument) throws
+//    init(remoteDataDocument: RemoteDataDocument) throws
 }
 
 
@@ -20,6 +20,14 @@ public protocol RemoteDataGeneric: ReadableRemoteData {
     associatedtype Reference: RemoteDataReferenceGeneric
     var reference: Reference { get }
     init(remoteDataReference: Reference, dictionary: [String: Any]) throws
+}
+
+// STOPGAP FIX. REMOVE ASAP
+extension RemoteDataGeneric {
+    
+    public var remoteDataReference: RemoteDataReference {
+        return reference
+    }
 }
 
 
