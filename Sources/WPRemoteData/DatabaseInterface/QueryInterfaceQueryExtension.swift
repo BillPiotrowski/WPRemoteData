@@ -40,7 +40,6 @@ extension QueryInterface {
     ) -> QueryInterface {
         switch filter.whereOperator {
         case .isEqualTo:
-            print("INSIDE IS EQUAL TO: \(filter.fieldStrings)")
             return self.whereFieldInterface(
                 filter.fieldStrings,
                 isEqualTo: filter.value as Any

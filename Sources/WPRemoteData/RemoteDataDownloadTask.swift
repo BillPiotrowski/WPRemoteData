@@ -13,8 +13,9 @@ import ReactiveSwift
 public class RemoteDataDownloadTask: DownloadTaskRoot, DownloadTaskItem {
     public var temp: URL.Type = URL.self
     
-    let remoteData: LocallyArchivableRemoteDataReference
-    
+//    let remoteData: LocallyArchivableRemoteDataReference
+    private let action: Action<Void, Double, Error>
+    private let localURL: URL
     
     
     private let downloadStateInput: Signal<DownloadState, Never>.Observer
@@ -35,7 +36,9 @@ public class RemoteDataDownloadTask: DownloadTaskRoot, DownloadTaskItem {
     
     
     init(
-        remoteDataProtocol: LocallyArchivableRemoteDataReference,
+//        remoteDataProtocol: LocallyArchivableRemoteDataReference,
+        action: Action<Void, Double, Error>,
+        localURL: URL,
         handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
     ){
         
@@ -59,7 +62,9 @@ public class RemoteDataDownloadTask: DownloadTaskRoot, DownloadTaskItem {
         self.progressSignalProducer = signals.progressSignalProducer
 //        self.completedInput = signals.completedInput
 //        self.completedSignalProducer = signals.completedSignalProducer
-        self.remoteData = remoteDataProtocol
+//        self.remoteData = remoteDataProtocol
+        self.action = action
+        self.localURL = localURL
         super.init(handler: handler)
         progress.totalUnitCount = 1
         
@@ -83,26 +88,42 @@ public class RemoteDataDownloadTask: DownloadTaskRoot, DownloadTaskItem {
         
     }
     
-    convenience init(
-        remoteData: LocallyArchivableRemoteDataReference,
-        handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
-    ){
-        self.init(remoteDataProtocol: remoteData, handler: handler)
-    }
+//    convenience init(
+//        remoteData: LocallyArchivableRemoteDataReference,
+//        handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
+//    ){
+//        self.init(remoteDataProtocol: remoteData, handler: handler)
+//    }
     
     override public func nextTask() {
-        remoteData.download()
-        .done { data in
-            let localURL = self.remoteData.localFileReference.url
-            // CAN EVENTUALLY SEND DATA?
-//            self.completedInput.send(value: localURL)
-            self.downloadState = .complete
-            self.completionStatus = .success(localURL: localURL)
-        }
-        .catch { error in
-            self.downloadState = .failure(error: error)
-            self.completionStatus = .failure(error: error)
-        }
+        action.apply().start(
+            Signal<Double, ActionError<Error>>.Observer(
+                value: { val in
+                    // UPDATE PROGRESS?
+                },
+                failed: { error in
+                    self.downloadState = .failure(error: error)
+                    self.completionStatus = .failure(error: error)
+                },
+                completed: {
+                    self.downloadState = .complete
+                    self.completionStatus = .success(localURL: self.localURL)
+                },
+                interrupted: {}
+            )
+        )
+//        remoteData.download()
+//        .done { data in
+//            let localURL = self.remoteData.localFileReference.url
+//            // CAN EVENTUALLY SEND DATA?
+////            self.completedInput.send(value: localURL)
+//            self.downloadState = .complete
+//            self.completionStatus = .success(localURL: localURL)
+//        }
+//        .catch { error in
+//            self.downloadState = .failure(error: error)
+//            self.completionStatus = .failure(error: error)
+//        }
         //remoteData.getToLocal(completionHandler: getToLocalCallback)
     }
 }
@@ -139,4 +160,5 @@ extension RemoteDataDownloadTask {
         }
     }
 }
+
 

@@ -14,7 +14,6 @@ import FirebaseFirestore
 /// This is used to simulate the shared methods of `Query` and `CollectionReference` since the Firestore model has `CollectionReference` inheriting `Query`.
 protocol FirebaseQuery: QueryInterface {
     func whereField(_ field: FieldPath, isEqualTo: Any) -> Query
-    func whereField(_ field: String, isEqualTo: Any) -> Query
     func whereField(_ field: FieldPath, isGreaterThan: Any) -> Query
     func whereField(_ field: FieldPath, isGreaterThanOrEqualTo: Any) -> Query
     func whereField(_ field: FieldPath, isLessThan: Any) -> Query
@@ -52,10 +51,8 @@ extension FirebaseQuery {
         _ fields: [String],
         isEqualTo: Any
     ) -> QueryInterface {
-        print("INSIDE WHERE AGAIN: \(fields)")
         let fieldPath = FieldPath(fields)
-        return whereField(fields.first!, isEqualTo: isEqualTo)
-//        return whereField(fieldPath, isEqualTo: isEqualTo)
+        return whereField(fieldPath, isEqualTo: isEqualTo)
     }
     
     public func whereFieldInterface(
