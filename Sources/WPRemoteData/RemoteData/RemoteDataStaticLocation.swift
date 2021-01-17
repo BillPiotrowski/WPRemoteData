@@ -11,9 +11,9 @@ import ReactiveSwift
 /// Extension describing RemoteData whose RemoteDocument has a StaticLocation, making getAll and addListener accessibly as static methods.
 extension RemoteData where
     RemoteDoc: RemoteDataDocumentStaticLocation,
-    RemoteDoc == RemoteDoc.StaticLocation.A,
+    RemoteDoc.Location: RemoteDataLocationVariableChild,
+    RemoteDoc == RemoteDoc.Location.A,
     RemoteDoc == RemoteDoc.Data.RemoteDoc,
-    RemoteDoc.StaticLocation == RemoteDoc.Location,
     RemoteDoc.Data == Self
 {
     public static func getAll(
@@ -32,7 +32,7 @@ extension RemoteData where
         Self.RemoteDoc.addListener(filters: filters)
     }
     
-    public static var remoteLocation: RemoteDoc.StaticLocation {
+    public static var remoteLocation: RemoteDoc.Location {
         RemoteDoc.remoteDataLocation
     }
     

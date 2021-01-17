@@ -145,15 +145,15 @@ public protocol RemoteDataStaticReference: GettableRemoteDataDocument {
 ///
 /// - note: Can build out version for static child, but that seems less useful.
 public protocol RemoteDataDocumentStaticLocation: GettableRemoteDataDocument {
-    associatedtype StaticLocation: RemoteDataLocationVariableChild
-    static var remoteDataLocation: StaticLocation { get }
+    static var remoteDataLocation: Location { get }
 }
 
 
+/// Where Location has variable children and that child is self and self matches data's document.
 extension RemoteDataDocumentStaticLocation where
-    Self == Self.StaticLocation.A,
-    Self == Self.Data.RemoteDoc,
-    Self.StaticLocation == Self.Location
+    Location: RemoteDataLocationVariableChild,
+    Self == Self.Location.A,
+    Self == Self.Data.RemoteDoc
 {
     public static func getAll(
         filters: [WhereFilter]? = nil
@@ -169,5 +169,9 @@ extension RemoteDataDocumentStaticLocation where
         Signal<(ScorepioQueryResponse<Self,Data>?, Error?), Never>
     ){
         Self.remoteDataLocation.addListener(filters: filters)
+    }
+    
+    public var location: Self.Location {
+        Self.remoteDataLocation
     }
 }
