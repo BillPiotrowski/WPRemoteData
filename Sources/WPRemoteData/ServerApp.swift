@@ -7,6 +7,7 @@
 //
 
 import Firebase
+import FirebaseStorage
 
 /// Public class for configuring Firestore. Will instantiate the Firestore singleton to be used throughout application.
 ///
@@ -19,6 +20,7 @@ public class ServerAppStarter {
     
     /// Instantiation of Firestore database or injected class for testing.
     let db: DatabaseInterface
+    let storage: StorageInterface
     
     /// The singleton version of this class.
     ///
@@ -35,8 +37,10 @@ public class ServerAppStarter {
         switch config.forTesting {
         case true:
             self.db = DummyDatabase.shared
+            self.storage = DummyStorage()
         case false:
             self.db = Firestore.firestore()
+            self.storage = Storage.storage()
         }
     }
     

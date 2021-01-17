@@ -7,8 +7,9 @@
 //
 
 import SPCommon
-import FirebaseStorage
+//import FirebaseStorage
 import ReactiveSwift
+import Foundation
 
 public enum DownloadState {
     case initialized
@@ -126,7 +127,7 @@ public class RemoteFileDownloadTask: DownloadTaskRoot, DownloadTaskItem {
     
     let remoteFile: RemoteFileProtocol
     let localFile: LocalFile
-    private var storageDownloadTask: StorageDownloadTask?
+    private var storageDownloadTask: StorageDownloadTaskInterface?
     
     private let downloadStateInput: Signal<DownloadState, Never>.Observer
     private let downloadProgressInput: Signal<Progress, Never>.Observer
@@ -227,7 +228,7 @@ public class RemoteFileDownloadTask: DownloadTaskRoot, DownloadTaskItem {
             return
         }
         self.downloadState = .downloading
-        self.storageDownloadTask = remoteFile.ref.write(
+        self.storageDownloadTask = remoteFile.ref.writeInterface(
             toFile: localFile.url,
             completion: self.storageDownloadTaskComplete
         )
@@ -252,15 +253,17 @@ extension RemoteFileDownloadTask {
 // MARK: OBSERVATIONS
 extension RemoteFileDownloadTask {
     private func setObservations(){
-        storageDownloadTask?.observe(.failure, handler: self.observe(_:))
-        storageDownloadTask?.observe(.pause, handler: self.observe(_:))
-        storageDownloadTask?.observe(.resume, handler: self.observe(_:))
-        storageDownloadTask?.observe(.success, handler: self.observe(_:))
-        storageDownloadTask?.observe(.progress, handler: self.observe(_:))
+        storageDownloadTask?.observeInterface(.failure, handler: self.observe(_:))
+        storageDownloadTask?.observeInterface(.pause, handler: self.observe(_:))
+        storageDownloadTask?.observeInterface(.resume, handler: self.observe(_:))
+        storageDownloadTask?.observeInterface(.success, handler: self.observe(_:))
+        storageDownloadTask?.observeInterface(.progress, handler: self.observe(_:))
         //storageDownloadTask?.observe(.unknown, handler: unknownHandler)
     }
-    private func observe(_ storageTaskSnapshot: StorageTaskSnapshot){
-        switch storageTaskSnapshot.status {
+    private func observe(
+        _ storageTaskSnapshot: StorageTaskSnapshotInterface
+    ){
+        switch storageTaskSnapshot.statusInterface {
         case .pause:
             self.downloadState = .paused
             return
@@ -282,7 +285,6 @@ extension RemoteFileDownloadTask {
         case .success:
             self.downloadState = .complete
         case .unknown: return
-        @unknown default: return
         }
     }
 }
@@ -292,7 +294,7 @@ extension RemoteFileDownloadTask {
     private func callObservers(_ status: RemoteFileDownloadTask.Observable){
         callObservers(status, downloadTaskSnapshot: self.snapshot)
     }
-    private func callObservers(_ status: RemoteFileDownloadTask.Observable, storageTaskSnapshot: StorageTaskSnapshot){
+    private func callObservers(_ status: RemoteFileDownloadTask.Observable, storageTaskSnapshot: StorageTaskSnapshotInterface){
         callObservers(status, downloadTaskSnapshot: snapshot)
     }
 }

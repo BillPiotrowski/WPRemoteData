@@ -7,24 +7,50 @@
 //
 
 import Foundation
-import FirebaseStorage
 import SPCommon
 
-/*
-public protocol RemoteFileProtocol: RemoteDownloadable {
+
+
+
+// IS THIS NECESSARY???
+public protocol RemoteFileProtocol: RemoteDataItem, RemoteDownloadable {
     var location: RemoteFileFolderProtocol { get }
     var name: String { get }
-    var localFile: LocalFileProtocol { get }
-    init(remoteFileFolder: RemoteFileFolderProtocol, file: String) throws
+    var localFile: LocalFile { get }
+//    init(remoteFileFolder: RemoteFileFolderProtocol, file: String) throws
 }
-/*
+
+// MARK: - CONFORM: RemoteDataItem
 extension RemoteFileProtocol {
-    // SHOULD NOT BE PUBLIC!
-    public var ref: StorageReference {
-        return location.location.child(name)
+    public var parentPathArray: [String] {
+        return location.pathArray
     }
 }
-*/
+
+
+
+
+
+
+
+public protocol RemoteFileVariableChild: RemoteFileProtocol {
+    associatedtype RemoteLocation: RemoteFileFolderGettableChildren
+    var remoteLocation: RemoteLocation { get }
+    init(remoteLocation: RemoteLocation, name: String)
+}
+extension RemoteFileVariableChild {
+    public var location: RemoteFileFolderProtocol {
+        remoteLocation
+    }
+}
+
+
+
+
+
+
+
+
 public protocol RemoteDownloadable {
     var downloadTaskProtocol: DownloadTaskProtocol { get }
 }
@@ -35,7 +61,10 @@ extension RemoteFileProtocol {
         return localFile.exists
     }
 }
-*/
+
+
+
+
 
 
 
@@ -47,8 +76,8 @@ extension RemoteFileProtocol {
 
 extension RemoteFileProtocol /*: RemoteDownloadable*/ {
     // SHOULD NOT BE PUBLIC!
-    public var ref: StorageReference {
-        return location.location.child(name)
+    public var ref: StorageReferenceInterface {
+        return location.locationInterface.childInterface(name)
     }
     public var downloadTaskProtocol: DownloadTaskProtocol {
         return downloadTask
