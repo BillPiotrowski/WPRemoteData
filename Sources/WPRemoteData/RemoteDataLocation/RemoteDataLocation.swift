@@ -26,19 +26,11 @@ public protocol RemoteDataLocation: RemoteDataItem {
     /// In the future, this could be generic, but not sure that is necessary. Would allow to traverse database more, but seems unnessary.
     var parentReference: RemoteDataDocument? { get }
     
-    /// This variable allows the location to be switched between a production and testing server. Should not be changed except for testing environments.
-    ///
-    /// Could potentially be moved to a database struct that is overrideable? Would simplifying having to override every unique Location for testing.
-    static var database: DatabaseInterface { get }
 }
 
 // MARK: DEFAULT
 extension RemoteDataLocation {
     public var parentReference: RemoteDataDocument? { nil }
-    
-    public static var database: DatabaseInterface {
-        Firestore.firestore()
-    }
 }
 
 // MARK: COMFORM: RemoteDataItem
@@ -48,6 +40,13 @@ extension RemoteDataLocation {
     }
     public var parentPathArray: [String] {
         parentReference?.pathArray ?? []
+    }
+}
+
+// MARK: - DATABASE
+extension RemoteDataLocation {
+    internal static var database: DatabaseInterface {
+        ServerAppStarter.shared.db
     }
 }
 

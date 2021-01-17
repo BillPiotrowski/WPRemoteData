@@ -31,5 +31,13 @@ extension RemoteData where
     ){
         Self.RemoteDoc.addListener(filters: filters)
     }
+    
+    public static var remoteLocation: RemoteDoc.StaticLocation {
+        RemoteDoc.remoteDataLocation
+    }
+    
+    public static func generateID() -> String {
+        remoteLocation.generateDocumentID()
+    }
 }
 

@@ -17,6 +17,12 @@ final class GetAllListenableTests: XCTestCase {
         TestLocation.database as! DummyDatabase
     }()
     
+    override func setUp() {
+        ServerAppStarter.configure(
+            ServerAppStarter.Config(forTesting: true)
+        )
+    }
+    
     
     
     // MARK: -

@@ -24,9 +24,7 @@ extension TestLocation: RemoteDataLocation {
 //    }
     
 }
-extension TestLocation {
-    static var database: DatabaseInterface { DummyDatabase.shared }
-}
+
 extension TestLocation: RemoteDataLocationVariableChild {
     typealias A = TestDocument
     
