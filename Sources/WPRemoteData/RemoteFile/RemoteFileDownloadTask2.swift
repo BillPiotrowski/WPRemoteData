@@ -6,19 +6,8 @@
 //
 
 import Foundation
-
 import SPCommon
-//import FirebaseStorage
 import ReactiveSwift
-import Foundation
-
-
-
-
-
-
-
-
 
 class NewDownloadTask {
 //    private let action: Action<Void, Double, Error>
@@ -43,15 +32,15 @@ class NewDownloadTask {
         }
     }
     
-//    public private (set) let state: DownloadState
     public private (set) var progress: Progress
     
-    private var storageDownloadTask: StorageDownloadTaskInterface? = nil
+    // Should be weak in prod?
+    internal var storageDownloadTask: StorageDownloadTaskInterface? = nil
+    
+    private let lifecycleDisposable = CompositeDisposable()
     
     init(
-//        storageDownloadTask: StorageDownloadTaskInterface,
         remoteFile: RemoteFileProtocol,
-//        localFile: LocalFile, // PReferable OpenableLocalFile generic.,
         hardRefresh: Bool
     ){
         let progress: Progress = Progress()
@@ -66,17 +55,10 @@ class NewDownloadTask {
             then: statePipe.output
         )
         
-//        let (lettersSignal, lettersObserver) = Signal<String, Never>.pipe()
-//        let (numbersSignal, numbersObserver) = Signal<String, Never>.pipe()
-//        let (signal, observer) = Signal<Signal<String, Never>, Never>.pipe()
-        
-        
-
-        // Not sure if second should be Error or Never
         let progressSignalsPipe = Signal<Signal<Double, Error>, Error>.pipe()
         let flattenedSignal = progressSignalsPipe.output.flatten(.latest)
         
-        flattenedSignal.observe(
+        let disposable1 = flattenedSignal.observe(
             Signal<Signal<Double, Error>.Value, Error>.Observer(
                 value: { val in
                     statePipe.input.send(value: .loading)
@@ -84,14 +66,12 @@ class NewDownloadTask {
                     statePipe.input.send(value: .failure(error: error))
                 }, completed: {
                     statePipe.input.send(value: .complete)
+                    statePipe.input.sendCompleted()
                 }, interrupted: {
-                    statePipe.input.send(value: .paused)
+                    // Does not bubble up to outter from inner signals.
                 }
             )
         )
-        
-        
-        
         
         self.progressSignalsInput = progressSignalsPipe.input
         self.progress = progress
@@ -100,16 +80,44 @@ class NewDownloadTask {
         self.stateProperty = stateProperty
         self.stateInput = statePipe.input
         
+        // MARK: - INIT COMPLETE
+        
+        let disposable2 = self.stateProperty.producer.startWithValues {
+            switch $0 {
+            case .paused:
+                // REMOVING ALL OBSERVERS WILL CAUSE HANLDER TO NOT BE CALLED. NOT USING YET, SO NOT A BIG DEAL.
+                self.storageDownloadTask?.removeAllObservers()
+                break
+                
+            case .complete:
+                // These are not required, but cleaning up.
+                self.storageDownloadTask?.removeAllObservers()
+                self.lifecycleDisposable.dispose()
+                self.storageDownloadTask = nil
+                break
+                
+            case .failure:
+                // These are not required, but cleaning up.
+                self.storageDownloadTask?.removeAllObservers()
+                self.storageDownloadTask = nil
+                
+                // !!! REQUIRED: !!!
+                self.lifecycleDisposable.dispose()
+                break
+                
+            case .loading, .initialized: break
+            }
+        }
+        
+        self.lifecycleDisposable.add(disposable1)
+        self.lifecycleDisposable.add(disposable2)
         
     }
     
-    var localFile: LocalFile {
-        return remoteFile.localFile
-    }
-    
-    
-    
-    
+}
+
+// MARK: - PUBLIC METHODS
+extension NewDownloadTask {
     
     // Start creates a new signal and returns it / or producer.
     // when state changes the state new value setter checks for pause -> interrupts. and completions and errors.
@@ -117,35 +125,78 @@ class NewDownloadTask {
     /// Returns a Signal Producer with the Double indicating percentage complete from 0.0 to 1.0
     ///
     /// If there file is local and hardRefresh is set to false, it will immediately return a completed event.
+    ///
+    /// An attempt to start after the download has already completed will return a SignalProducer with an immediate value event (should be 1.0 since complete) and then a completion event.
     func start() -> SignalProducer<Double, Error> {
-        // ADD CHECK FOR IS COMPLETE!
-        guard hardRefresh || !localFile.exists /* || !isComplete*/ else {
-            
-//            let signal = Signal<State, Never>.pipe()
-            
-            // ensure progress is set to complete
-            let progress = Progress(totalUnitCount: 1)
-            progress.completedUnitCount = 1
-            self.state = .complete
-//            self.downloadProgress = progress
-            
-//            completionStatus = .success(localURL: remoteFile.localFile.url)
-            return SignalProducer<Double, Error>.init(value: 1)
-//            return
+        guard !self.isComplete
+        else {
+            return SignalProducer<Double, Error>.init(
+                value: self.percentComplete
+            )
         }
-//        self.downloadState = .downloading
-        self.state = .loading
+        guard hardRefresh || !localFile.exists
+        else {
+            progress.completedUnitCount = progress.totalUnitCount
+            self.progressSignalsInput.sendCompleted()
+            return SignalProducer<Double, Error>.init(
+                value: self.percentComplete
+            )
+        }
+        
+        guard let downloadTask = self.storageDownloadTask
+        else {
+            return self.createNew()
+        }
+        return self.resumePrevious(downloadTask: downloadTask)
+    }
+    
+    
+    func cancel(){
+        self.storageDownloadTask?.cancel()
+    }
+    func pause(){
+        self.storageDownloadTask?.pause()
+    }
+}
+
+
+
+// MARK: - CREATE / RESUME HELPERS
+extension NewDownloadTask {
+    
+    /// If storageDownloadTaskInterface has already been set, a new one should not be created.
+    ///
+    /// That would create duplicate progress instances and leave the previous download task unresolved.
+    private func resumePrevious(
+        downloadTask: StorageDownloadTaskInterface
+    ) -> SignalProducer<Double, Error> {
+        let progressSignal = Signal<Double, Error>.pipe()
+        
+        setObservations(
+            downloadTask: downloadTask,
+            progressSignalInput: progressSignal.input
+        )
+        
+        self.progressSignalsInput.send(value: progressSignal.output)
+        
+        downloadTask.resume()
+        return progressSignal.output.producer
+    }
+    
+    private func createNew() -> SignalProducer<Double, Error> {
+        let progressSignal = Signal<Double, Error>.pipe()
+        
         let downloadTask = remoteFile.ref.writeInterface(
             toFile: localFile.url,
             completion: self.downloadTaskComplete
         )
         self.storageDownloadTask = downloadTask
         
-        let progressSignal = Signal<Double, Error>.pipe()
         setObservations(
             downloadTask: downloadTask,
             progressSignalInput: progressSignal.input
         )
+        
         self.progressSignalsInput.send(value: progressSignal.output)
         
         // Not sure I want this???
@@ -153,25 +204,43 @@ class NewDownloadTask {
 //            progressSignal.input.send(value: 0.0)
 //        }
         return progressSignal.output.producer
-        
-//        return stateProperty.producer.attemptMap { response throws -> Double? in
-//            switch response {
-//            case .failure(let error): throw error
-//            case .loading(let progress): return progress.progress.fractionCompleted
-//            default: return nil
-//            }
-//        }.compactMap{
-//            return $0
-//        }
-        
-    }
-    func cancel(){
-        self.storageDownloadTask?.cancel()
-    }
-    func pause(){
-        self.storageDownloadTask?.pause()
     }
     
+}
+
+
+// MARK: - COMPUTED VARS
+extension NewDownloadTask {
+    
+    public private (set) var state: State {
+        get {
+            self.stateProperty.value
+        }
+        set {
+            self.stateInput.send(value: newValue)
+        }
+    }
+    
+    struct ProgressSnapshot {
+        let progress: Progress
+    }
+    
+    public var isComplete: Bool {
+        self.state.isComplete
+    }
+    
+    public var percentComplete: Double {
+        return progress.fractionCompleted
+    }
+    
+    var localFile: LocalFile {
+        return remoteFile.localFile
+    }
+}
+
+
+// MARK: - OBSERVATIONS
+extension NewDownloadTask {
     private func setObservations(
         downloadTask: StorageDownloadTaskInterface,
         progressSignalInput: Signal<Double, Error>.Observer
@@ -198,70 +267,54 @@ class NewDownloadTask {
         progressSignalInput: Signal<Double, Error>.Observer
     ){
         switch storageTaskSnapshot.statusInterface {
+        
         case .pause:
+            // Have to manually set state to paused because an inner signal's interruption is not bubbled up to the master signal in a flattened operator.
+            // Setting state first so testing can verify.
+            // This is consistent with how the other observers are set. Since they are set in init, they are called prior to the external signal observer.
+            self.state = .paused
             progressSignalInput.sendInterrupted()
-            return
+            
         case .failure:
             guard let error = storageTaskSnapshot.error
             else { return }
-            print("ERROR!!!: \(error)")
+            self.progressSignalsInput.sendCompleted()
             progressSignalInput.send(error: error)
-            return
+            
         case .progress:
             guard let progress = storageTaskSnapshot.progress
             else { return }
-            
             if childProgress == nil {
                 childProgress = progress
             }
-            
             progressSignalInput.send(value: progress.fractionCompleted)
             
-            self.state = .loading
-            // REMOVE THIS EVENTUALLY!
-            
-            // CAN I ADD PROGRESS AS CHILD OF MAIN PROGRESS?
-            // INSTEAD OF UPDATING MANUALLY?
-//            self.progress.
-//            self.progress.totalUnitCount = progress.totalUnitCount
-//            self.progress.completedUnitCount = progress.completedUnitCount
-//            callObservers(.progress, storageTaskSnapshot: storageTaskSnapshot)
         case .resume:
-            self.state = .loading
-//            self.downloadState = .
+            break
+            // Not sure what I want to do here.
+//            self.state = .loading
+        
         case .success:
-            // MUST BE CALLED FIRST
+            // Signal of Signals must be completed prior to the signal for the completion to bubble up.
             self.progressSignalsInput.sendCompleted()
             progressSignalInput.sendCompleted()
-//            self.state = .complete
+            
         case .unknown: return
         }
     }
     
     private func downloadTaskComplete(url: URL?, error: Error?){
-        guard let url = url
-        else {
-            self.state = .failure(error: error ?? NSError(
-                domain: "No url and no error?",
-                code: 3
-            ))
-            return
-        }
-        self.state = .complete
+        // !!! DO NOT USE !!!
+        // This handler is currently removed when pause is called.
+        // Will need to change pause handler to not call removeAllHandlers(), but instead remove the 5 observers individually.
+        // Then this can be used.
     }
-    
-    public private (set) var state: State {
-        get {
-            self.stateProperty.value
-        } set {
-//            self.stateInput.send(value: newValue)
-//            guard case .complete = newValue
-//            else { return }
-//            self.stateInput.sendCompleted()
-            // SET PROGRESS TO ENSURE IT IS COMPLETE
-        }
-    }
-    
+}
+
+
+// MARK: - DEFINITIONS
+// This will need to be renamed and removed from namespace if this becomes the model for all download tasks.
+extension NewDownloadTask {
     enum State: Equatable {
         static func == (
             lhs: NewDownloadTask.State, rhs: NewDownloadTask.State
@@ -297,46 +350,4 @@ class NewDownloadTask {
         case complete
         case failure(error: Error)
     }
-    
-    
-    struct ProgressSnapshot {
-        let progress: Progress
-    }
-    
-    public var isComplete: Bool {
-        self.state.isComplete
-    }
-    
 }
-
-/*
-class StorageDownloadObserver {
-    private weak var signal: Signal<Double, Error>.Observer
-    private weak var downloadTask: StorageDownloadTaskInterface
-    
-    init(
-        signal: Signal<Double, Error>.Observer,
-        downloadTask: StorageDownloadTaskInterface
-    ){
-        self.signal = signal
-        self.downloadTask = downloadTask
-    }
-    
-}
-
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -18,7 +18,7 @@ struct DummyStorageTaskSnapshot: StorageTaskSnapshotInterface {
 
 
 
-class DummyStorageDownloadTask: StorageDownloadTaskInterface {
+class DummyStorageDownloadTask {
     internal let progress: Progress
     internal private (set) var isRunning: Bool = true
     
@@ -91,6 +91,42 @@ class DummyStorageDownloadTask: StorageDownloadTaskInterface {
         )
     }
     
+}
+
+// MARK: - CONFORM: StorageDownloadTaskInterface
+extension DummyStorageDownloadTask: StorageDownloadTaskInterface {
+    
+    func pause() {
+        self.isRunning = false
+        self.sendPause()
+    }
+    
+    func cancel() {
+        self.isRunning = false
+        // I'm not sure what happens when a cancel is sent. Error?
+        // After looking at Firebase Objective C, I think an error is sent natively on cancel.
+        self.sendError(
+            error: NSError(domain: "User cancelled", code: 1)
+        )
+    }
+    
+    func resume() {
+        self.isRunning = true
+        self.sendResume()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.sendProgress(ratioComplete: 0.8)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.sendProgress(ratioComplete: 0.9)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.sendProgress(ratioComplete: 1.0)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            self.sendSuccess()
+        }
+    }
+    
     /// Not sure how Firebase handles it, but this class only manages one handler at a time. Adding a second observer will overwrite the first.
     func observeInterface(
         _ status: StorageTaskStatusInterface,
@@ -106,23 +142,28 @@ class DummyStorageDownloadTask: StorageDownloadTaskInterface {
         }
     }
     
-    func pause() {
-        print("This does nothing.")
-        self.isRunning = false
-        self.sendPause()
+    func removeAllObservers(){
+        self.removeAllObserversInterface(for: .failure)
+        self.removeAllObserversInterface(for: .pause)
+        self.removeAllObserversInterface(for: .progress)
+        self.removeAllObserversInterface(for: .resume)
+        self.removeAllObserversInterface(for: .success)
+        self.handler = nil
     }
     
-    func cancel() {
-        self.isRunning = false
-        // I'm not sure what happens when a cancel is sent. Error?
-        self.sendError(error: NSError(domain: "User cancelled", code: 1))
-        print("This does nothing.")
+    func removeAllObserversInterface(
+        for status: StorageTaskStatusInterface
+    ){
+        switch status {
+        case .failure: self.failureHandler = nil
+        case .pause: self.pauseHandler = nil
+        case .progress: self.progressHandler = nil
+        case .resume: self.resumeHandler = nil
+        case .success: self.successHandler = nil
+        case .unknown: break
+        }
     }
     
-    func resume() {
-        self.isRunning = true
-        self.sendResume()
-    }
 }
 
 
@@ -160,7 +201,7 @@ class DummySuccessDownloadTask: DummyStorageDownloadTask {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.sendProgress(ratioComplete: 1.0)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) {
             self.sendSuccess()
         }
     }

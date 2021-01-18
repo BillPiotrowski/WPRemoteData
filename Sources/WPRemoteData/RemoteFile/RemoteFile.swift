@@ -116,6 +116,15 @@ extension RemoteFileProtocol /*: RemoteDownloadable*/ {
     var downloadTask2: NewDownloadTask {
         return NewDownloadTask(remoteFile: self, hardRefresh: false)
     }
+    func createDownloadTask(
+        hardRefresh: Bool? = nil
+    ) -> NewDownloadTask {
+        let hardRefresh = hardRefresh ?? false
+        return NewDownloadTask(
+            remoteFile: self,
+            hardRefresh: hardRefresh
+        )
+    }
 }
 
 

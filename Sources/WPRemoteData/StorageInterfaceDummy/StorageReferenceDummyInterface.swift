@@ -50,21 +50,23 @@ extension DummyStorageReferenceInterface {
     ) -> StorageDownloadTaskInterface {
         print("PATH: \(self.path)")
         switch self.name {
-        case FileName.error.rawValue: return DummyErrorDownloadTask()
-        case FileName.simpleSuccess.rawValue: return DummySuccessDownloadTask()
+        case TestRemoteFileName.error.rawValue:
+            return DummyErrorDownloadTask()
+        case TestRemoteFileName.simpleSuccess.rawValue:
+            return DummySuccessDownloadTask()
         default: return DummyErrorDownloadTask()
         }
         
         
     }
     
-    enum FileName: String {
-        case error
-        case simpleSuccess
-    }
-    
 }
 
+
+enum TestRemoteFileName: String {
+    case error
+    case simpleSuccess
+}
 
 
 /*

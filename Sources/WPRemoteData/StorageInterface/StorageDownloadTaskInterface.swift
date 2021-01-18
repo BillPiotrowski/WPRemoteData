@@ -15,10 +15,16 @@ public protocol StorageDownloadTaskInterface {
     /// By looking at the Objective C code for Firebase, I think cancel will send an error when called.
     func cancel()
     func resume()
+    
+    /// Native Firebase version of this method returns a handle to remove the observer.
+    ///
+    /// Deciding this is not worth implementing, because observers should be all or nothing. No reason to add or remove specific ones.
     func observeInterface(
         _ status: StorageTaskStatusInterface,
         handler: @escaping (StorageTaskSnapshotInterface) -> Void
     )
+    func removeAllObservers()
+    func removeAllObserversInterface(for: StorageTaskStatusInterface)
 }
 
 public enum StorageTaskStatusInterface: Int {

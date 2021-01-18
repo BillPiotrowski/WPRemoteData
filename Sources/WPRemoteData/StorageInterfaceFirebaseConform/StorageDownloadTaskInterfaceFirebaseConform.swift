@@ -26,6 +26,12 @@ extension StorageDownloadTask: StorageDownloadTaskInterface {
     ) {
         self.observe(status.storageTaskStatus, handler: handler)
     }
+    public func removeAllObserversInterface(
+        for status: StorageTaskStatusInterface
+    ){
+        let state = status.storageTaskStatus
+        self.removeAllObservers(for: state)
+    }
 }
 
 fileprivate extension StorageTaskStatusInterface {
