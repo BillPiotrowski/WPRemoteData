@@ -112,6 +112,10 @@ extension RemoteFileProtocol /*: RemoteDownloadable*/ {
     public var downloadTask: RemoteFileDownloadTask {
         return Self.downloadTask(storageDocument: self, localDocument: localFile)
     }
+    
+    var downloadTask2: NewDownloadTask {
+        return NewDownloadTask(remoteFile: self, hardRefresh: false)
+    }
 }
 
 

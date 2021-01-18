@@ -9,7 +9,7 @@ import Foundation
 
 class DummyStorage: StorageInterface {
     func storageReferenceInterface() -> StorageReferenceInterface {
-        return DummyStorageReferenceInterface(name: "asdf", path: "sad")
+        return DummyStorageReferenceInterface(path: "root")
     }
 }
 

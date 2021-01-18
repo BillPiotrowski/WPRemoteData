@@ -10,22 +10,25 @@ import Foundation
 
 class DummyStorageReferenceInterface: StorageReferenceInterface {
     
-    let name: String
     let path: String
     init(
-        name: String,
         path: String
     ){
-        self.name = name
         self.path = path
+    }
+    
+    var name: String {
+        let pathArray = path.split(separator: "/")
+        guard let last = pathArray.last
+        else { return path }
+        return String(last)
     }
 }
     
 extension DummyStorageReferenceInterface {
     func childInterface(_ path: String) -> StorageReferenceInterface {
         return DummyStorageReferenceInterface(
-            name: "",
-            path: "\(self.path)/\(name)/\(path)"
+            path: "\(self.path)/\(path)"
         )
     }
     
@@ -45,13 +48,34 @@ extension DummyStorageReferenceInterface {
         toFile fileURL: URL,
         completion: ((URL?, Error?) -> Void)?
     ) -> StorageDownloadTaskInterface {
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            completion?(nil, NSError(domain: "error writing", code: 4))
+        print("PATH: \(self.path)")
+        switch self.name {
+        case FileName.error.rawValue: return DummyErrorDownloadTask()
+        case FileName.simpleSuccess.rawValue: return DummySuccessDownloadTask()
+        default: return DummyErrorDownloadTask()
         }
-        return DummyStorageDownloadTask()
+        
         
     }
     
+    enum FileName: String {
+        case error
+        case simpleSuccess
+    }
     
 }
+
+
+
+/*
+ Test make sure the initial value is sent / recieved (this is more verifying signal producer properties.
+ Test that pausing ends the signal.
+ Test error stops signal.
+ Test complete stops signal and recieves final progress.
+ test progress behaves as expected (as child of main progress)
+ 
+ 
+ 
+ */
+
+

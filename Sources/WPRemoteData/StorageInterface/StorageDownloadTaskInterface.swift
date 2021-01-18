@@ -11,6 +11,8 @@ import Foundation
 
 public protocol StorageDownloadTaskInterface {
     func pause()
+    
+    /// By looking at the Objective C code for Firebase, I think cancel will send an error when called.
     func cancel()
     func resume()
     func observeInterface(
