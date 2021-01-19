@@ -55,6 +55,8 @@ extension DummyStorageReferenceInterface {
             return DummySuccessDownloadTask()
         case TestRemoteFileName.simpleSuccess2.rawValue:
             return DummySuccessDownloadTask()
+        case TestRemoteFileName.quickSuccess.rawValue:
+            return DummyQuickSuccessDownloadTask()
         default: return DummyErrorDownloadTask()
         }
         
@@ -68,6 +70,7 @@ enum TestRemoteFileName: String {
     case error
     case simpleSuccess
     case simpleSuccess2
+    case quickSuccess
 }
 
 

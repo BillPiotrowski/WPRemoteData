@@ -20,7 +20,12 @@ struct DummyStorageTaskSnapshot: StorageTaskSnapshotInterface {
 
 class DummyStorageDownloadTask {
     internal let progress: Progress
-    internal private (set) var isRunning: Bool = true
+    
+    /// When started or resumed, a random string is generated and set as a runningSessionID. This allows timers to check to make sure that it is the same start session that they were instantiated in before firing.
+    fileprivate var runningSessionID: String? = nil
+    var isRunning: Bool {
+        runningSessionID != nil
+    }
     
     internal private(set) var failureHandler:
         ((StorageTaskSnapshotInterface) -> Void)?
@@ -39,6 +44,8 @@ class DummyStorageDownloadTask {
     init(){
         let progress = Progress(totalUnitCount: 1000)
         self.progress = progress
+        
+        self.runningSessionID = self.randomString()
     }
     
     func sendError(error: Error){
@@ -97,12 +104,12 @@ class DummyStorageDownloadTask {
 extension DummyStorageDownloadTask: StorageDownloadTaskInterface {
     
     func pause() {
-        self.isRunning = false
+        self.runningSessionID = nil
         self.sendPause()
     }
     
     func cancel() {
-        self.isRunning = false
+        self.runningSessionID = nil
         // I'm not sure what happens when a cancel is sent. Error?
         // After looking at Firebase Objective C, I think an error is sent natively on cancel.
         self.sendError(
@@ -111,18 +118,23 @@ extension DummyStorageDownloadTask: StorageDownloadTaskInterface {
     }
     
     func resume() {
-        self.isRunning = true
+        self.runningSessionID = self.randomString()
+        let sessionID = self.runningSessionID!
         self.sendResume()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 0.8)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 0.9)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 1.0)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendSuccess()
         }
     }
@@ -163,6 +175,13 @@ extension DummyStorageDownloadTask: StorageDownloadTaskInterface {
         case .unknown: break
         }
     }
+    private func randomString() -> String {
+//        func randomString(length: Int) -> String {
+        let length = 11
+          let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+          return String((0..<length).map{ _ in letters.randomElement()! })
+//        }
+    }
     
 }
 
@@ -174,13 +193,17 @@ extension DummyStorageDownloadTask: StorageDownloadTaskInterface {
 class DummyErrorDownloadTask: DummyStorageDownloadTask {
     override init(){
         super.init()
+        let sessionID = self.runningSessionID!
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 0.2)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 0.4)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendError(error: NSError(domain: "asdf", code: 4))
         }
     }
@@ -189,19 +212,43 @@ class DummyErrorDownloadTask: DummyStorageDownloadTask {
 class DummySuccessDownloadTask: DummyStorageDownloadTask {
     override init(){
         super.init()
+        let sessionID = self.runningSessionID!
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 0.3)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 0.6)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 0.8)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendProgress(ratioComplete: 1.0)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) {
+            guard self.runningSessionID == sessionID else { return }
+            self.sendSuccess()
+        }
+    }
+}
+class DummyQuickSuccessDownloadTask: DummyStorageDownloadTask {
+    override init(){
+        super.init()
+        let sessionID = self.runningSessionID!
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+            guard self.runningSessionID == sessionID else { return }
+            self.sendProgress(ratioComplete: 0.45)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+            guard self.runningSessionID == sessionID else { return }
+            self.sendProgress(ratioComplete: 1.0)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            guard self.runningSessionID == sessionID else { return }
             self.sendSuccess()
         }
     }
