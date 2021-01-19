@@ -8,8 +8,6 @@
 import Foundation
 import ReactiveSwift
 
-// serial vs parallel
-// sequential
 class NewGroupDownloadTask {
     public var hardRefresh: Bool
     private let subtasks: [NewDownloadTaskProtocol]
@@ -22,18 +20,10 @@ class NewGroupDownloadTask {
     var progress: Progress
     private let lifecycleDisposable = CompositeDisposable()
     
-    /// This gives the class access to the signal that is returned on start. Mainly used for pausing.
-    ///
-    /// Is interrupting on pause still a good idea?
-//    private var userInitiatedInput: (Signal<Double, Error>.Observer)?
-    
-//    private var currentMaster: (Signal<Double, Error>)?
-    
     let downloadOrder: DownloadOrder
     static let downloadOrderDefault = DownloadOrder.sequential
     
     var interruptableInput: (Signal<Double, Error>.Observer)?
-//    var masterInput: (Signal<Signal<Double, Error>, Error>.Observer)?
     
     init(
         downloadTasks: [NewDownloadTaskProtocol],
@@ -60,7 +50,6 @@ class NewGroupDownloadTask {
         
         
         for task in downloadTasks {
-//            progressSignalsPipe.input.send(value: task.progressSignal)
             progress.addChild(
                 task.progress,
                 withPendingUnitCount: 100
@@ -70,7 +59,6 @@ class NewGroupDownloadTask {
             }
         }
         let hardRefresh = hardRefresh ?? NewGroupDownloadTask.defaultHardRefresh
-//        progressSignalsPipe.input.sendCompleted()
         
         
         self.progressSignalsInput = progressSignalsPipe.input
@@ -82,70 +70,10 @@ class NewGroupDownloadTask {
         self.progressSignal = flattenedSignal
         self.downloadOrder = downloadOrder
         
-        /*
-        let disposable1 = flattenedSignal.observe(
-            Signal<Signal<Double, Error>.Value, Error>.Observer(
-                value: { val in
-                    print("FINAL FINAL VAL: \(val)")
-                    statePipe.input.send(value: .loading)
-                }, failed: { error in
-                    print("FINAL FINAL ERROR: \(error)")
-                    statePipe.input.send(value: .failure(error: error))
-                }, completed: {
-                    print("FINAL FINAL ATTEMPT COMPLETE")
-                    guard self.areSubtasksComplete
-                    else {
-                        self.interruptableInput?.sendInterrupted()
-                        statePipe.input.send(value: .paused)
-                        return
-                    }
-                    print("FINAL FINAL COMPLETE")
-                    statePipe.input.send(value: .complete)
-                    statePipe.input.sendCompleted()
-                }, interrupted: {
-                    print("SHOULD NEVER SEE THIS INTERRUPTED!")
-                    // Does not bubble up to outter from inner signals.
-                }
-            )
-        )
-        */
-        
-        
-        // MARK: - INIT COMPLETE
-        
-        let disposable2 = self.stateProperty.producer.startWithValues {
-            switch $0 {
-            case .paused:
-                // REMOVING ALL OBSERVERS WILL CAUSE HANLDER TO NOT BE CALLED. NOT USING YET, SO NOT A BIG DEAL.
-//                self.storageDownloadTask?.removeAllObservers()
-                break
-                
-            case .complete:
-                // These are not required, but cleaning up.
-//                self.storageDownloadTask?.removeAllObservers()
-                self.lifecycleDisposable.dispose()
-//                self.storageDownloadTask = nil
-                break
-                
-            case .failure:
-                // These are not required, but cleaning up.
-//                self.storageDownloadTask?.removeAllObservers()
-//                self.storageDownloadTask = nil
-                
-                // !!! REQUIRED: !!!
-                self.lifecycleDisposable.dispose()
-                break
-                
-            case .loading, .initialized: break
-            }
-        }
-        
-//        self.lifecycleDisposable.add(disposable1)
-        self.lifecycleDisposable.add(disposable2)
     }
 }
  
-// MARK: - CONFORM: NewDownloadTaskProtocol
+// MARK: - START
 extension NewGroupDownloadTask: NewDownloadTaskProtocol {
     
     /// Starts or resumes the download task and returns a signal of progress.
@@ -181,9 +109,15 @@ extension NewGroupDownloadTask: NewDownloadTaskProtocol {
         
         /// This is the pipe that all signal producers from subtask start() merge to.
         ///
-        /// May need to handle this slightly differently at some point in case tasks complete prior to the completion of this pipe.
+        /// - warning: RACE CONDITION: There is a race condition between starting the signals and returning the signal producer. Straight-forward code requires subtasks to be started prior to returning the signal producer.
+        ///
+        /// Current solution is to add a .1 second delay which does seem to fix issues.
+        ///
+        /// Also, the worst case situation is when all files are local, the subtasks immediately return completed which is not recieved by the user without the delay (and possibly even with delay). This is mitigated by have the local check at the top of this function and not relying on the individual subtasks.
+        ///
+        /// Removing the delay and the above isLocal guard WILL cause problems when all files are local and possibly other problems.
+        ///
         /// - May need to use an action to start all subtasks at once on parallel?
-        /// - Or expose the interruptable signal of subtask to the pipe can be generated and returned prior to starting.
         let masterPipe = Signal<Signal<Double, Error>, Error>.pipe()
         
         /// Signal creating by flattening (merge) the master pipe output.
@@ -191,6 +125,8 @@ extension NewGroupDownloadTask: NewDownloadTaskProtocol {
         /// Side injection replacing the inner task's completion with the global Progress item completion.
         ///
         /// - warning: DO NOT SEND TO END USER. MUST BE SENT TO INTERRUPTABLE FIRST. Merge interprets inner signal's interruptions as completion, making pause / interruptions appear to be completions.
+        ///
+        /// Should delay send to a different qos?
         let flattenedMaster = masterPipe.output.flatten(.merge).map{
             _ -> Double in
             self.percentComplete
@@ -198,45 +134,24 @@ extension NewGroupDownloadTask: NewDownloadTaskProtocol {
         
         
         
-//        let newMasterPipe = Signal<Signal<Double, Error>, Error>.pipe()
-//        let newInterruptable = Signal<Double, Error>.pipe()
-//
-//
-//        var taskSignalPairs = [TaskSignalPair]()
-//        for task in subtasks {
-//            let newPipe = Signal<Double, Error>.pipe()
-//            newMasterPipe.input.send(value: newPipe.output)
-//            taskSignalPairs.append(
-//                TaskSignalPair(task: task, signal: newPipe.input)
-//            )
-//        }
-//
-//        newInterruptable.input.send(value: newMasterPipe.output.flatten(.merge).map {_ -> Double in
-//            return self.percentComplete
-//        })
-        
-        
-        
-        
         /// A pipe created to allow the subtask master pipe to be manually interrupted.
         ///
-        /// Since flattening (merge) a signal will cause interruptions to be treated as completions, this pipe is created to allow some gymnastics to take place to interrupt.
+        /// Since flattening (merge) a signal will cause interruptions to be treated as completions, this pipe is created to allow immediate observers using on(:) directly on subtasks to interrupt prior to bubbling up as a completion..
         ///
         /// Already commited to idea that pause = interruption, so to continue this design, each subtask will create an observer prior to attaching to the master. If that subtask is interrupted, it interrupts this signal first.
         let interruptablePipe = Signal<Double, Error>.pipe()
-        
-        
         
         
         // Send flattened master to interruptablePipe.
         flattenedMaster.observe(interruptablePipe.input)
         
         let newSig = interruptablePipe.output.on(
-            event: {_ in},
             failed: { error in
                 self.progressSignalsInput.sendCompleted()
                 self.stateInput.send(value: .failure(error: error))
                 self.stateInput.sendCompleted()
+                
+                // !!! -- REQUIRED -- !!!
                 self.lifecycleDisposable.dispose()
             },
             completed: {
@@ -251,8 +166,6 @@ extension NewGroupDownloadTask: NewDownloadTaskProtocol {
             interrupted: {
                 self.stateInput.send(value: .paused)
             },
-            terminated: {},
-            disposed: {},
             value: {_ in
                 self.stateInput.send(value: .loading)
             }
@@ -260,58 +173,19 @@ extension NewGroupDownloadTask: NewDownloadTaskProtocol {
         
         
         
-        
-//
-//
-//            value: { val in
-//                print("FINAL FINAL VAL: \(val)")
-//                statePipe.input.send(value: .loading)
-//            }, failed: { error in
-//                print("FINAL FINAL ERROR: \(error)")
-//                statePipe.input.send(value: .failure(error: error))
-//            }, completed: {
-//                print("FINAL FINAL ATTEMPT COMPLETE")
-//                guard self.areSubtasksComplete
-//                else {
-//                    self.interruptableInput?.sendInterrupted()
-//                    statePipe.input.send(value: .paused)
-//                    return
-//                }
-//                print("FINAL FINAL COMPLETE")
-//                statePipe.input.send(value: .complete)
-//                statePipe.input.sendCompleted()
-//            }, interrupted: {
-//                print("SHOULD NEVER SEE THIS INTERRUPTED!")
-//                // Does not bubble up to outter from inner signals.
-//            }
-//
-//
-//
-        
-        
-        
-        
-        
         // ORDER IS IMPORTANT.
         // MUST OBSERVE BEFORE SENDING TO self.progressSignalsInput TO BE ABLE TO CLOSE SIGNALS INPUT.
         // SO THAT IF COMPLETED, IT CAN COMPLETE self.progressSignalsInput
-//        interruptablePipe.output.producer.startWithCompleted {
-//        }
         self.progressSignalsInput.send(value: newSig)
     
         self.interruptableInput = interruptablePipe.input
         
         switch downloadOrder {
         case .parallel:
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                self.startParallel(masterPipe: masterPipe.input)
-//            }
+            self.startParallel(masterPipe: masterPipe.input)
             return newSig.producer
         case .sequential:
-            
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.startSequential(masterPipe: masterPipe.input)
-//            }
+            try? self.startNextTask(masterPipe: masterPipe.input)
             return newSig.producer
         }
         
@@ -327,13 +201,16 @@ extension NewGroupDownloadTask {
             /// An intermediate signal is created so that the task signal producer can be observed.
             /// - important: Need to observe the subtasks interruption prior to sending to master pipe so that any interruption is captured and handled prior to sending to master.
             let newSignal = Signal<Double, Error>.pipe()
-            newSignal.output.producer.startWithInterrupted {
-                self.handleInterruption()
-            }
             masterPipe.send(value: newSignal.output)
             
             // START SUBTASK
-            task.start().start(newSignal.input)
+            let disposable = task.start().on(
+                interrupted: {
+                    self.handleInterruption()
+                }
+            ).start(newSignal.input)
+            
+            self.lifecycleDisposable.add(disposable)
         }
         masterPipe.sendCompleted()
     }
@@ -341,20 +218,14 @@ extension NewGroupDownloadTask {
  
 // MARK: - SEQUENTIAL
 extension NewGroupDownloadTask {
-    private func startSequential(
-        masterPipe: Signal<Signal<Double, Error>, Error>.Observer
-    ){
-        do {
-            print("TRY NEXT TASK")
-            try self.startNextTask(masterPipe: masterPipe)
-        } catch {
-            print("NO NEXT TASK")
-//            return SignalProducer<Double, Error>.init(
-//                error: error
-//            )
-        }
-//        return signal.producer
-    }
+//    private func startSequential(
+//        masterPipe: Signal<Signal<Double, Error>, Error>.Observer
+//    ){
+//        do {
+//            try self.startNextTask(masterPipe: masterPipe)
+//        } catch {
+//        }
+//    }
     
     /// Escaping recursive function that starts the next task and when it completes calls itself to begin the next task.
     private func startNextTask(
@@ -368,11 +239,7 @@ extension NewGroupDownloadTask {
         /// An intermediate signal is created so that the task signal producer can be observed.
         /// - important: Need to observe the subtasks interruption prior to sending to master pipe so that any interruption is captured and handled prior to sending to master.
         let newSignal = Signal<Double, Error>.pipe()
-//        newSignal.output.producer.startWithInterrupted {
-//            self.handleInterruption()
-//        }
-//        newSignal.output.producer.startWithCompleted {
-//        }
+        
         masterPipe.send(value: newSignal.output)
         
         // Closes master pipe if this is the final task to complete
@@ -380,13 +247,7 @@ extension NewGroupDownloadTask {
             masterPipe.sendCompleted()
         }
         
-//        masterPipe.send(value:
-//        )
-        let temp = nextTask.start().on(
-//            starting: {},
-//            started: {},
-//            event: {_ in},
-//            failed: { error in},
+        let disposable = nextTask.start().on(
             completed: {
                 do {
                     try self.startNextTask(masterPipe: masterPipe)
@@ -396,12 +257,10 @@ extension NewGroupDownloadTask {
             },
             interrupted: {
                 self.handleInterruption()
-            },
-            terminated: {},
-            disposed: {},
-            value: {_ in}
+            }
         ).start(newSignal.input)
         
+        self.lifecycleDisposable.add(disposable)
     }
     
     private func handleInterruption(){
@@ -468,18 +327,4 @@ extension NewGroupDownloadTask {
     enum DownloadOrder {
         case parallel, sequential
     }
-}
-
-
-
-
-struct DownloadSession {
-    
-    let tasks: [TaskSignalPair]
-}
-
-
-struct TaskSignalPair {
-    let task: NewDownloadTaskProtocol
-    let signal: Signal<Double, Error>.Observer
 }
