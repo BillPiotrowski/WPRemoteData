@@ -8,7 +8,7 @@
 import Foundation
 import ReactiveSwift
 
-protocol NewDownloadTaskProtocol {
+protocol NewDownloadTaskProtocol: class {
     
 //    var hardRefresh: Bool { get }
     
@@ -33,9 +33,14 @@ protocol NewDownloadTaskProtocol {
     
     /// Are all files local.
     var isLocal: Bool { get }
+    
+    /// Currently only has an affect at init or when a parent task is initialized. In future can change this so that there is a didSet { } method, but seems unneccessary right now.
+    var hardRefresh: Bool { get set }
 }
 extension NewDownloadTaskProtocol {
-    
+    public static var defaultHardRefresh: Bool {
+        false
+    }
     public var isComplete: Bool {
         self.state.isComplete
     }

@@ -12,7 +12,7 @@ import ReactiveSwift
 class NewDownloadTask: NewDownloadTaskProtocol {
 //    private let action: Action<Void, Double, Error>
     private let remoteFile: RemoteFileProtocol
-    private let hardRefresh: Bool
+    public var hardRefresh: Bool
     
     public let stateProperty: Property<NewDownloadTaskState>
     private let stateInput: Signal<NewDownloadTaskState, Never>.Observer

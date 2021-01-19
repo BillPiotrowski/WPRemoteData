@@ -79,8 +79,12 @@ final class GroupDownloadExpectationTests: XCTestCase {
         let localFile2 = DummyLocalFile(
             dummyID: TestRemoteFileName.simpleSuccess2.rawValue
         )
+        let localFile3 = DummyLocalFile(
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
+        )
         try localFile1.delete()
         try localFile2.delete()
+        try localFile3.delete()
     }
     
     
@@ -89,13 +93,13 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 4 progress
         // 4 progress
         // complete
-        self.expect.expectedFulfillmentCount = 9
+        self.expect.expectedFulfillmentCount = 7
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
         )
         let remoteFile2 = DummyRemoteFile(
-            dummyID: TestRemoteFileName.simpleSuccess2.rawValue
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
         var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
         var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
@@ -328,17 +332,17 @@ final class GroupDownloadExpectationTests: XCTestCase {
     
     // MARK: - TEST PAUSE / RESTART
     func testPauseAndRestartSeq(){
-        // 2 progress
+        // 1 progress
         // 1 pause
-        // 4 progress
+        // 5 progress
         // 1 complete
-        self.expect.expectedFulfillmentCount = 10
+        self.expect.expectedFulfillmentCount = 8
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
         )
         let remoteFile2 = DummyRemoteFile(
-            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
         var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
         var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
@@ -387,7 +391,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
         )
         let remoteFile2 = DummyRemoteFile(
-            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
         var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
         var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
@@ -540,6 +544,197 @@ final class GroupDownloadExpectationTests: XCTestCase {
     }
     
     
+    // MARK: - TEST HARD REFRESH SEQUENTIAL
+    func testHardRefreshSeq() throws {
+        // 4 progress
+        // 2 progress
+        // complete
+        self.expect.expectedFulfillmentCount = 7
+        
+        
+        let dummyData1 = DummyLocalData(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        let dummyData2 = DummyLocalData(
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
+        )
+        
+        try dummyData1.saveToDisk()
+        try dummyData2.saveToDisk()
+        
+        
+        let remoteFile1 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        let remoteFile2 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
+        )
+        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
+        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        
+        self.downloadTask = NewGroupDownloadTask(
+            downloadTasks: [subtask1!, subtask2!],
+            hardRefresh: true
+        )
+        
+        downloadTask?.start().start(self.observer)
+        
+        let result = XCTWaiter.wait(for: [self.expect], timeout: 7)
+        switch result {
+        case .completed:
+            XCTAssert(downloadTask?.isComplete == true)
+            self.compositeDisposable.dispose()
+            subtask1 = nil
+            subtask2 = nil
+            weak var task = self.downloadTask
+            self.downloadTask = nil
+            XCTAssert(task == nil)
+        case .timedOut: XCTFail("TIMED OUT.")
+        default: XCTFail("Failed to complete.")
+        }
+    }
     
+    // MARK: - HARD REFRESH PARALLEL
+    func testHardRefreshParallel() throws {
+        // 4 progress
+        // 4 progress
+        // complete
+        self.expect.expectedFulfillmentCount = 7
+        
+        let dummyData1 = DummyLocalData(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        let dummyData2 = DummyLocalData(
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
+        )
+        
+        try dummyData1.saveToDisk()
+        try dummyData2.saveToDisk()
+        
+        let remoteFile1 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        let remoteFile2 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
+        )
+        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
+        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        
+        self.downloadTask = NewGroupDownloadTask(
+            downloadTasks: [subtask1!, subtask2!],
+            hardRefresh: true,
+            downloadOrder: .parallel
+        )
+        
+        downloadTask?.start().start(self.observer)
+        
+        let result = XCTWaiter.wait(for: [self.expect], timeout: 8)
+        switch result {
+        case .completed:
+            XCTAssert(downloadTask?.isComplete == true)
+            self.compositeDisposable.dispose()
+            subtask1 = nil
+            subtask2 = nil
+            weak var task = self.downloadTask
+            self.downloadTask = nil
+            XCTAssert(task == nil)
+        case .timedOut: XCTFail("TIMED OUT.")
+        default: XCTFail("Failed to complete.")
+        }
+    }
+    
+    
+    
+    // MARK: - TEST ONE LOCAL SEQUENTIAL
+    // One local and no hard refresh. Should only download one file.
+    func testOneLocalSeq() throws {
+        // 4 progress
+        // 2 progress
+        // complete
+        self.expect.expectedFulfillmentCount = 4
+        
+        
+        let dummyData1 = DummyLocalData(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        
+        try dummyData1.saveToDisk()
+        
+        
+        let remoteFile1 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        let remoteFile2 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
+        )
+        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
+        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        
+        self.downloadTask = NewGroupDownloadTask(
+            downloadTasks: [subtask1!, subtask2!],
+            hardRefresh: false
+        )
+        
+        downloadTask?.start().start(self.observer)
+        
+        let result = XCTWaiter.wait(for: [self.expect], timeout: 7)
+        switch result {
+        case .completed:
+            XCTAssert(downloadTask?.isComplete == true)
+            self.compositeDisposable.dispose()
+            subtask1 = nil
+            subtask2 = nil
+            weak var task = self.downloadTask
+            self.downloadTask = nil
+            XCTAssert(task == nil)
+        case .timedOut: XCTFail("TIMED OUT.")
+        default: XCTFail("Failed to complete.")
+        }
+    }
+    
+    // MARK: - ONE LOCAL PARALLEL
+    func testOneLocalParallel() throws {
+        // 4 progress
+        // 4 progress
+        // complete
+        self.expect.expectedFulfillmentCount = 4
+        
+        let dummyData1 = DummyLocalData(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        
+        try dummyData1.saveToDisk()
+        
+        let remoteFile1 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        let remoteFile2 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
+        )
+        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
+        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        
+        self.downloadTask = NewGroupDownloadTask(
+            downloadTasks: [subtask1!, subtask2!],
+            hardRefresh: false,
+            downloadOrder: .parallel
+        )
+        
+        downloadTask?.start().start(self.observer)
+        
+        let result = XCTWaiter.wait(for: [self.expect], timeout: 8)
+        switch result {
+        case .completed:
+            XCTAssert(downloadTask?.isComplete == true)
+            self.compositeDisposable.dispose()
+            subtask1 = nil
+            subtask2 = nil
+            weak var task = self.downloadTask
+            self.downloadTask = nil
+            XCTAssert(task == nil)
+        case .timedOut: XCTFail("TIMED OUT.")
+        default: XCTFail("Failed to complete.")
+        }
+    }
     
 }

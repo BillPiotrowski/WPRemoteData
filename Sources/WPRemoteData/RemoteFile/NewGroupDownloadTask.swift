@@ -11,7 +11,7 @@ import ReactiveSwift
 // serial vs parallel
 // sequential
 class NewGroupDownloadTask {
-    private let hardRefresh: Bool
+    public var hardRefresh: Bool
     private let subtasks: [NewDownloadTaskProtocol]
     
     public let stateProperty: Property<NewDownloadTaskState>
@@ -37,7 +37,7 @@ class NewGroupDownloadTask {
     
     init(
         downloadTasks: [NewDownloadTaskProtocol],
-        hardRefresh: Bool,
+        hardRefresh: Bool? = nil,
         downloadOrder: DownloadOrder? = nil
     ){
         let downloadOrder = downloadOrder ?? Self.downloadOrderDefault
@@ -65,7 +65,11 @@ class NewGroupDownloadTask {
                 task.progress,
                 withPendingUnitCount: 100
             )
+            if let hardRefresh = hardRefresh {
+                task.hardRefresh = hardRefresh
+            }
         }
+        let hardRefresh = hardRefresh ?? NewGroupDownloadTask.defaultHardRefresh
 //        progressSignalsPipe.input.sendCompleted()
         
         
