@@ -35,9 +35,6 @@ extension DummyDocumentReference: DocumentReferenceInterface {
         return "\(collectionReference.path)/\(relativePath)"
     }
     
-    func getDocumentInterface(completion: @escaping (DocumentSnapshotInterface?, Error?) -> Void) {
-        completion(nil, NSError(domain: "no doc", code: 1))
-    }
     
     func addSnapshotListenerInterface(
         _ listener: @escaping (DocumentSnapshotInterface?, Error?) -> Void
@@ -59,3 +56,43 @@ extension DummyDocumentReference: DocumentReferenceInterface {
     
     
 }
+
+
+struct DummyDocumentSnapshot: DocumentSnapshotInterface {
+    let documentID: String
+    let dataVal: [String: Any]?
+    
+    func data() -> [String : Any]? {
+        dataVal
+    }
+}
+
+extension DummyDocumentReference {
+    func getDocumentInterface(
+        completion: @escaping (DocumentSnapshotInterface?, Error?) -> Void
+    ) {
+        switch documentID {
+        case DummyDataDocID.failure.rawValue:
+            let error = NSError(domain: "no doc", code: 1)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                completion(nil, error)
+            }
+        default:
+            let snapshot = DummyDocumentSnapshot(
+                documentID: self.documentID,
+                dataVal: ["propert1":"value1"]
+            )
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                completion(snapshot, nil)
+            }
+        }
+    }
+}
+
+enum DummyDataDocID: String {
+    case quickSuccess
+    case failure
+    
+}
+
+

@@ -28,8 +28,7 @@ public protocol RemoteDataDownloadableDocument: GettableRemoteDataDocument {
 
 
 // SIMPLIFY??
-extension GettableRemoteDataDocument where
-    Self: RemoteDataDownloadableDocument,
+extension RemoteDataDownloadableDocument where
     Self.Data == Self.LocalDoc.O,
     Self.Data.RemoteDoc == Self,
     Self.LocalDoc == Self.LocalDoc.O.File,
@@ -61,13 +60,15 @@ extension GettableRemoteDataDocument where
         }
     }
     
-    public var downloadTask: DownloadTaskProtocol {
-        RemoteDataDownloadTask(action: self.downloadAction, localURL: localDocument.url)
+    public var downloadTask: RemoteDataDownloadTask<Self> {
+        RemoteDataDownloadTask(
+            remoteDataDocument: self
+        )
     }
     /// Unnecessary conformance to RemoteDownloadable.
     ///
     /// Would like to remove this in future.
-    public var downloadTaskProtocol: DownloadTaskProtocol {
+    public var downloadTaskProtocol: NewDownloadTaskProtocol {
         self.downloadTask
     }
     

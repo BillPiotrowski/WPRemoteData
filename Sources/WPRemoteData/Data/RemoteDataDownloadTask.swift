@@ -10,155 +10,133 @@ import Foundation
 import SPCommon
 import ReactiveSwift
 
-public class RemoteDataDownloadTask: DownloadTaskRoot, DownloadTaskItem {
-    public var temp: URL.Type = URL.self
+public class RemoteDataDownloadTask<
+    RemoteDoc: RemoteDataDownloadableDocument
+> {
+    public let stateProperty: Property<NewDownloadTaskState>
+    private let stateInput: Signal<NewDownloadTaskState, Never>.Observer
     
-//    let remoteData: LocallyArchivableRemoteDataReference
-    private let action: Action<Void, Double, Error>
-    private let localURL: URL
+    public private (set) var progress: Progress
+    
+    public var state: NewDownloadTaskState { self.stateProperty.value }
+    
+    private let localFile: RemoteDoc.LocalDoc
+    
+    public var isLocal: Bool {
+        return localFile.exists
+    }
+    
+    public var hardRefresh: Bool
+    
+    public var remoteDataDocument: RemoteDoc
     
     
-    private let downloadStateInput: Signal<DownloadState, Never>.Observer
-    private let downloadProgressInput: Signal<Progress, Never>.Observer
     
-    /// Stores the current state of the download. A merged value of DownloadState and Progress.
-    public let downloadStatusProperty: Property<DownloadTaskState>
     
-    /// Produces a sigal of the download task's progress. Can result in error and will complete upon successful download.
-    public let progressSignalProducer: SignalProducer<Progress, Error>
     
-//    private let completedInput: Signal<URL, Error>.Observer
     
-    /// A signal that provides the final completed element Generic.
-//    public let completedSignalProducer: SignalProducer<URL, Error>
     
     let disposable = CompositeDisposable()
     
     
-    init(
-//        remoteDataProtocol: LocallyArchivableRemoteDataReference,
-        action: Action<Void, Double, Error>,
-        localURL: URL,
-        handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
+    fileprivate init(
+        remoteDataDocument: RemoteDoc,
+        localFile: RemoteDoc.LocalDoc,
+        hardRefresh: Bool? = nil
     ){
+        let hardRefresh = hardRefresh ?? NewGroupDownloadTask.defaultHardRefresh
+        let progress: Progress = Progress()
+        progress.fileOperationKind = .downloading
+        progress.totalUnitCount = Int64(1)
         
+        let initialState = NewDownloadTaskState.initialized
         
-        let signals = RemoteFileDownloadTask.createSignals()
-        
-        
-        
-        
-        // HAVE NOT TESTED, BUT SHOULD WORK
-//        let disposable = signals.progressSignalProducer.startWithFailed {
-//            signals.completedInput.send(error: $0)
-//        }
-
-        
-        
-        
-        self.downloadProgressInput = signals.progressInput
-        self.downloadStateInput = signals.stateInput
-        self.downloadStatusProperty = signals.combinedProperty
-        self.progressSignalProducer = signals.progressSignalProducer
-//        self.completedInput = signals.completedInput
-//        self.completedSignalProducer = signals.completedSignalProducer
-//        self.remoteData = remoteDataProtocol
-        self.action = action
-        self.localURL = localURL
-        super.init(handler: handler)
-        progress.totalUnitCount = 1
-        
-        
-        // HELPS TO TEST UNTIL THERE IS UNIT TESTING OR MORE ROBUST PROTOCOLS
-//        print("NEW DATA DOWNLOAD TASK SIGNAL: \(remoteData.documentID)")
-//        progressSignalProducer.start(Signal<Progress, Error>.Observer(
-//            value: {value in
-//                print("DATA DOWNLOAD TASK LOADING: \(self.remoteData.documentID) \(value.fractionCompleted)")
-//            },
-//            failed: {error in
-//                print("DATA DOWNLOAD TASK ERROR: \(error)")
-//            },
-//            completed: {
-//                print("DATA DOWNLOAD TASK COMPLETE")
-//            },
-//            interrupted: {
-//                print("DATA DOWNLOAD TASK INTERUPTED")
-//            }
-//        ))
-        
-    }
-    
-//    convenience init(
-//        remoteData: LocallyArchivableRemoteDataReference,
-//        handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
-//    ){
-//        self.init(remoteDataProtocol: remoteData, handler: handler)
-//    }
-    
-    override public func nextTask() {
-        action.apply().start(
-            Signal<Double, ActionError<Error>>.Observer(
-                value: { val in
-                    // UPDATE PROGRESS?
-                },
-                failed: { error in
-                    self.downloadState = .failure(error: error)
-                    self.completionStatus = .failure(error: error)
-                },
-                completed: {
-                    self.downloadState = .complete
-                    self.completionStatus = .success(localURL: self.localURL)
-                },
-                interrupted: {}
-            )
+        let statePipe = Signal<NewDownloadTaskState, Never>.pipe()
+        let stateProperty = Property(
+            initial: initialState,
+            then: statePipe.output
         )
-//        remoteData.download()
-//        .done { data in
-//            let localURL = self.remoteData.localFileReference.url
-//            // CAN EVENTUALLY SEND DATA?
-////            self.completedInput.send(value: localURL)
-//            self.downloadState = .complete
-//            self.completionStatus = .success(localURL: localURL)
-//        }
-//        .catch { error in
-//            self.downloadState = .failure(error: error)
-//            self.completionStatus = .failure(error: error)
-//        }
-        //remoteData.getToLocal(completionHandler: getToLocalCallback)
+        
+        
+        
+        
+        
+        self.hardRefresh = hardRefresh
+        
+        self.stateProperty = stateProperty
+        self.stateInput = statePipe.input
+        self.progress = progress
+        self.remoteDataDocument = remoteDataDocument
+        self.localFile = localFile
+        
     }
 }
 
-/*
+
+
+extension RemoteDataDownloadTask: NewDownloadTaskProtocol where
+    RemoteDoc.Data == RemoteDoc.LocalDoc.O,
+    RemoteDoc.Data.RemoteDoc == RemoteDoc,
+    RemoteDoc.LocalDoc == RemoteDoc.LocalDoc.O.File,
+    RemoteDoc.LocalDoc.O: LocalOpenableData
+{
+    convenience init(
+        remoteDataDocument: RemoteDoc
+    ){
+        self.init(
+            remoteDataDocument: remoteDataDocument,
+            localFile: remoteDataDocument.localDocument
+        )
+    }
+    
+    public func start() -> SignalProducer<Double, Error> {
+        guard !self.isComplete
+        else {
+            return SignalProducer<Double, Error>.init(
+                value: self.percentComplete
+            )
+        }
+        guard hardRefresh || !isLocal
+        else {
+            progress.completedUnitCount = progress.totalUnitCount
+//            self.progressSignalsInput.sendCompleted()
+            self.stateInput.send(value: .complete)
+            return SignalProducer<Double, Error>.init(
+                value: self.percentComplete
+            )
+        }
+        
+        
+        let signalPipe = Signal<Double, Error>.pipe()
+        
+        // LOADING WILL NEVER SEND
+//        self.stateInput.send(value: .loading)
+        
+        self.remoteDataDocument.download()
+        .then { [unowned self] doc in
+            self.progress.completedUnitCount = self.progress.totalUnitCount
+            self.stateInput.send(value: .complete)
+            self.stateInput.sendCompleted()
+            signalPipe.input.send(value: 1.0)
+            signalPipe.input.sendCompleted()
+        }.catch { error in
+            self.stateInput.send(value: .failure(error: error))
+            signalPipe.input.send(error: error)
+        }
+        return signalPipe.output.producer
+    }
+}
+
+
+
 extension RemoteDataDownloadTask {
-    private func getToLocalCallback(response: RemoteDataType.GetResponse, error: Error?) {
-        guard let localURL = response.document?.serverDocument.localFile.url else {
-            completionStatus = .failure(error: error ?? DownloadTaskRoot.DownloadError.noURL)
-            return
-        }
-        completionStatus = .success(localURL: localURL)
+    public func attemptPause() {
+        // Could potentially stop the writing of the file to local?
+        return
+    }
+    
+    public func attemptCancel() {
+        // Could potentially stop the writing of the file to local?
+        return
     }
 }
-*/
-
-// MARK: COMPUTED VAR HELPERS
-extension RemoteDataDownloadTask {
-    public private (set) var downloadProgress: Progress {
-        get { return downloadStatusProperty.value.progress }
-        set {
-            self.downloadProgressInput.send(value: newValue)
-            guard newValue.isFinished else { return }
-            self.downloadProgressInput.sendCompleted()
-        }
-    }
-    public private (set) var downloadState: DownloadState {
-        get { return downloadStatusProperty.value.state }
-        set {
-            self.downloadStateInput.send(value: newValue)
-            guard case .complete = newValue else { return }
-            self.downloadProgressInput.sendCompleted()
-            self.downloadStateInput.sendCompleted()
-        }
-    }
-}
-
-

@@ -126,6 +126,54 @@ final class GroupDownloadExpectationTests: XCTestCase {
         }
     }
     
+    
+    
+    
+    
+    // MARK: - TEST 3 SIMPLE SUCCESS SEQUENTIAL
+    func test2File1DataSequenctial(){
+        // 4 progress
+        // 4 progress
+        // complete
+        self.expect.expectedFulfillmentCount = 8
+        
+        let remoteFile1 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.simpleSuccess.rawValue
+        )
+        let remoteFile2 = DummyRemoteFile(
+            dummyID: TestRemoteFileName.quickSuccess.rawValue
+        )
+        let remoteDoc = TestDocument(
+            testDataID: DummyDataDocID.quickSuccess.rawValue
+        )
+        
+        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
+        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        var subtask3: NewDownloadTaskProtocol? = remoteDoc.downloadTaskProtocol
+        
+        self.downloadTask = NewGroupDownloadTask(
+            downloadTasks: [subtask1!, subtask2!, subtask3!],
+            hardRefresh: false
+        )
+        
+        downloadTask?.start().start(self.observer)
+        
+        let result = XCTWaiter.wait(for: [self.expect], timeout: 7)
+        switch result {
+        case .completed:
+            XCTAssert(downloadTask?.isComplete == true)
+            self.compositeDisposable.dispose()
+            subtask1 = nil
+            subtask2 = nil
+            subtask3 = nil
+            weak var task = self.downloadTask
+            self.downloadTask = nil
+            XCTAssert(task == nil)
+        case .timedOut: XCTFail("TIMED OUT.")
+        default: XCTFail("Failed to complete.")
+        }
+    }
+    
     // MARK: - TEST 2 SIMPLE SUCCESS PARALLEL
     func testTwoSimpleSuccessParallel(){
         // 4 progress

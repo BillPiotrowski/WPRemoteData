@@ -10,7 +10,7 @@ import SPCommon
 @testable import WPRemoteData
 
 // MARK: -
-// MARK: LOCATION
+// MARK: REMOTE LOCATION
 struct TestLocation {
     
 }
@@ -55,9 +55,42 @@ extension TestDocument: GettableRemoteDataDocument {
     init(location: TestLocation, documentID: String){
         self.init(testDataID: documentID)
     }
-    
-    
 }
+extension TestDocument: RemoteDataDownloadableDocument {
+    
+    var localDocument: TestLocalFile {
+        TestLocalFile(dummyID: self.testDataID)
+    }
+}
+
+
+
+// MARK: - LOCAL
+struct TestLocalFolder: LocalDirectory {
+    let name: String = "tests"
+}
+//extension DummyLocalFolder: LocalDirectoryGe
+
+struct TestLocalFile: LocalFile {
+    let dummyID: String
+    var directory: LocalDirectory = TestLocalFolder()
+    
+    var name: String { dummyID }
+}
+extension TestLocalFile: LocalFileGeneric {
+    var localDirectoryGeneric: TestLocalFolder {
+        TestLocalFolder()
+    }
+    init(localDirectory: TestLocalFolder, name: String) {
+        self.init(dummyID: name)
+    }
+}
+extension TestLocalFile: LocalFileOpenable  {
+    typealias O = TestData
+}
+
+
+
 
 // MARK: -
 // MARK: DATA
@@ -96,6 +129,15 @@ extension TestData: RemoteData {
     
     var remoteDocument: TestDocument {
         TestDocument(testDataID: testDataID)
+    }
+    
+}
+extension TestData: LocalOpenable, LocalOpenableData {
+    var localFile: TestLocalFile { TestLocalFile(dummyID: testDataID) }
+    
+    /// Used to instantiate self (LocalOpenable) from a local file reference (LocalFile).
+    init(localFile: TestLocalFile) throws {
+        self.init(testDataID: localFile.dummyID)
     }
     
 }

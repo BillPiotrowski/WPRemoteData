@@ -320,8 +320,8 @@ extension NewDownloadTask {
 // MARK: - DEFINITIONS
 // This will need to be renamed and removed from namespace if this becomes the model for all download tasks.
 //extension NewDownloadTask {
-    enum NewDownloadTaskState: Equatable {
-        static func == (
+    public enum NewDownloadTaskState: Equatable {
+        public static func == (
             lhs: NewDownloadTaskState, rhs: NewDownloadTaskState
         ) -> Bool {
             switch (lhs, rhs) {
