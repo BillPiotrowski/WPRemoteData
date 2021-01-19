@@ -48,11 +48,12 @@ extension DummyStorageReferenceInterface {
         toFile fileURL: URL,
         completion: ((URL?, Error?) -> Void)?
     ) -> StorageDownloadTaskInterface {
-        print("PATH: \(self.path)")
         switch self.name {
         case TestRemoteFileName.error.rawValue:
             return DummyErrorDownloadTask()
         case TestRemoteFileName.simpleSuccess.rawValue:
+            return DummySuccessDownloadTask()
+        case TestRemoteFileName.simpleSuccess2.rawValue:
             return DummySuccessDownloadTask()
         default: return DummyErrorDownloadTask()
         }
@@ -66,6 +67,7 @@ extension DummyStorageReferenceInterface {
 enum TestRemoteFileName: String {
     case error
     case simpleSuccess
+    case simpleSuccess2
 }
 
 

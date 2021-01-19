@@ -9,13 +9,15 @@ import Foundation
 import SPCommon
 import ReactiveSwift
 
-class NewDownloadTask {
+class NewDownloadTask: NewDownloadTaskProtocol {
 //    private let action: Action<Void, Double, Error>
     private let remoteFile: RemoteFileProtocol
     private let hardRefresh: Bool
     
-    public let stateProperty: Property<State>
-    private let stateInput: Signal<State, Never>.Observer
+    public let stateProperty: Property<NewDownloadTaskState>
+    private let stateInput: Signal<NewDownloadTaskState, Never>.Observer
+    
+    public let progressSignal: Signal<Double, Error>
     
     // Not sure if second should be Error or Never
     private var progressSignalsInput: Signal<Signal<Double, Error>, Error>.Observer
@@ -47,9 +49,9 @@ class NewDownloadTask {
         progress.fileOperationKind = .downloading
         progress.totalUnitCount = 1
         
-        let initialState = State.initialized
+        let initialState = NewDownloadTaskState.initialized
         
-        let statePipe = Signal<State, Never>.pipe()
+        let statePipe = Signal<NewDownloadTaskState, Never>.pipe()
         let stateProperty = Property(
             initial: initialState,
             then: statePipe.output
@@ -68,6 +70,7 @@ class NewDownloadTask {
                     statePipe.input.send(value: .complete)
                     statePipe.input.sendCompleted()
                 }, interrupted: {
+                    print("DIDNT THINK INTERRUPTIONS SHOULD BE HERE")
                     // Does not bubble up to outter from inner signals.
                 }
             )
@@ -79,6 +82,11 @@ class NewDownloadTask {
         self.remoteFile = remoteFile
         self.stateProperty = stateProperty
         self.stateInput = statePipe.input
+        self.progressSignal = flattenedSignal
+        
+        self.progressSignal.producer.startWithInterrupted {
+            print("DIDNT THINK 2 INTERRUPTIONS SHOULD BE HERE")
+        }
         
         // MARK: - INIT COMPLETE
         
@@ -134,7 +142,7 @@ extension NewDownloadTask {
                 value: self.percentComplete
             )
         }
-        guard hardRefresh || !localFile.exists
+        guard hardRefresh || !isLocal
         else {
             progress.completedUnitCount = progress.totalUnitCount
             self.progressSignalsInput.sendCompleted()
@@ -151,10 +159,10 @@ extension NewDownloadTask {
     }
     
     
-    func cancel(){
+    func attemptCancel(){
         self.storageDownloadTask?.cancel()
     }
-    func pause(){
+    func attemptPause(){
         self.storageDownloadTask?.pause()
     }
 }
@@ -212,7 +220,7 @@ extension NewDownloadTask {
 // MARK: - COMPUTED VARS
 extension NewDownloadTask {
     
-    public private (set) var state: State {
+    public private (set) var state: NewDownloadTaskState {
         get {
             self.stateProperty.value
         }
@@ -225,16 +233,13 @@ extension NewDownloadTask {
         let progress: Progress
     }
     
-    public var isComplete: Bool {
-        self.state.isComplete
-    }
-    
-    public var percentComplete: Double {
-        return progress.fractionCompleted
-    }
     
     var localFile: LocalFile {
         return remoteFile.localFile
+    }
+    
+    var isLocal: Bool {
+        return localFile.exists
     }
 }
 
@@ -314,10 +319,10 @@ extension NewDownloadTask {
 
 // MARK: - DEFINITIONS
 // This will need to be renamed and removed from namespace if this becomes the model for all download tasks.
-extension NewDownloadTask {
-    enum State: Equatable {
+//extension NewDownloadTask {
+    enum NewDownloadTaskState: Equatable {
         static func == (
-            lhs: NewDownloadTask.State, rhs: NewDownloadTask.State
+            lhs: NewDownloadTaskState, rhs: NewDownloadTaskState
         ) -> Bool {
             switch (lhs, rhs) {
             case (.initialized, .initialized): return true
@@ -350,4 +355,4 @@ extension NewDownloadTask {
         case complete
         case failure(error: Error)
     }
-}
+//}

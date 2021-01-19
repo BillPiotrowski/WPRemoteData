@@ -134,7 +134,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         self.downloadTask = remoteFile.downloadTask2
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            self.downloadTask?.cancel()
+            self.downloadTask?.attemptCancel()
         }
         
         downloadTask?.start().start(self.observer)
@@ -168,7 +168,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         self.downloadTask = remoteFile.downloadTask2
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-            self.downloadTask?.pause()
+            self.downloadTask?.attemptPause()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             self.downloadTask?.start().start(self.observer)

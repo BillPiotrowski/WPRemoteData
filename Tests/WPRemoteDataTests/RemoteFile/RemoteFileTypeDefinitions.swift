@@ -60,7 +60,7 @@ extension DummyLocalData: LocalOpenableData {
 }
 
 struct DummyRemoteFile: RemoteFileProtocol {
-    let  dummyID: String
+    let dummyID: String
     let location: RemoteFileFolderProtocol = DummyRemoteFileFolder()
     var name: String { dummyID }
     
