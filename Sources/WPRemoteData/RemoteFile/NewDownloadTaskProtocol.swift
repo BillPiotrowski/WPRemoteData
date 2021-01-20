@@ -12,22 +12,42 @@ public protocol NewDownloadTaskProtocol: class {
     
 //    var hardRefresh: Bool { get }
     
-    /// presents the current state of the app. Signal is completed and will not change after error or completion. Interruptions will not be forwarded. Errors will not throw, but there will be an error state.
+    /// The current state of the download task.
+    ///
+    /// Where possible, state will always be set prior to sending a progress property. So checking state after a progress update should always be `loading` or `complete` if subscribed to a `progressSignalProducer`. There is a change that a `progressSignal` could receive a proress event while paused if a task is completing that was initiated prior to pause.
+    ///
+    /// Signal is completed and will not change after error or completion. Interruptions will not be forwarded. Errors will not throw, but there will be an error state.
     var stateProperty: Property<NewDownloadTaskState> { get }
     
     /// A signal that shows progress of the entire download – including subtasks. Reports the percent complete as fraction completed of Progress.
-    /// Will send a final progress value when complete followed by a completion event.
-    /// Will send an error event on error.
-    /// Unlike the signal producer returned from the start() method, this signal will not pass interruptions.
+    ///
+    /// Should send a final progress value when complete followed by a completion event, but this is not currently enforced and depends on underlying task.
+    ///
+    /// - note: Design decition as to whether or not to force a 1.0 progress prior to completing as it may be a duplicate. Possibly put a skipRepeats() to mitigate?
+    ///
+    /// Signal is failable on error, but unlike the progressSignalProducer, this will NOT send interruptions.
+    ///
+    /// Should include unit tests to verify this.
     var progressSignal: Signal<Double, Error> { get }
     
     var progress: Progress { get }
     
-    // Move this inside protocol.
+    ///
+    ///
+    /// - note: By design, state immediately represents the use-initiated state of the task, but may not always be accurate to the underlying task.
+    ///
+    /// For example: If the use pauses a download task, the state is immediately set to .paused, and the request to pause is sent to the underlying task, but a task in progress may still complete depending on how it handles the pause request.
+    ///
+    /// In this example, if the in-progress task does complete after the pause method is called, when the task is restarted, it will immediately return a progress of 1.0 and completion.
     var state: NewDownloadTaskState { get }
     
+    ///
+    /// - todo: Design and test what happens when start() is called while already in a .loading state.
+    ///
     func start() -> SignalProducer<Double, Error>
+    
     func attemptPause()
+    
     func attemptCancel()
     
     /// Are all files local.
@@ -49,6 +69,57 @@ extension NewDownloadTaskProtocol {
     }
 }
 
+// MARK: - PROGRESS SIGNAL PRODUCER
+extension NewDownloadTaskProtocol {
+    
+    /// A SignalProducer representing the download task's progress.
+    ///
+    /// Will immediately return a value of the progress, followed by a stream of updates.
+    ///
+    /// Unlike the `progressSignal`, the SignalProducer will terminate on interruption (pause).
+    ///
+    /// Terminates on completion and fails on error.
+    ///
+    /// - note: This is the same `SignalProducer` that is returned when the `start()` method is called.
+    ///
+    public var progressSignalProducer: SignalProducer<Double, Error> {
+        return SignalProducer<Double, Error>.init { (input, lifetime) in
+            
+            // !!! --- Order of events here is important. --- !!!
+            
+            // 1)
+            input.send(value: self.percentComplete)
+            
+            // 2) Complete, if necessary.
+            // Logically, would send the progress signal stream second to insure that all updates are caught,
+            // But instead, checking for state so that a broken of completed stream is not sent (like would happen after task completion).
+            let state = self.state
+            switch state {
+            case .complete: input.sendCompleted()
+            case .failure(let error): input.send(error: error)
+            case .paused: input.sendInterrupted()
+            default: break
+            }
+            
+            // 3) Observe stream in progress
+            let progDisposable = self.progressSignal.observe(input)
+            
+            // 4) Observe manual interruption (pause) events.
+            let stateDisposable = self.stateProperty.producer.startWithValues{
+                switch $0 {
+                case .paused: input.sendInterrupted()
+                default: break
+                }
+            }
+            
+            lifetime.observeEnded {
+                progDisposable?.dispose()
+                stateDisposable.dispose()
+            }
+            
+        }
+    }
+}
 
 
 

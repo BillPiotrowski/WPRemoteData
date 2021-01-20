@@ -139,6 +139,11 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         switch result {
         case .completed:
             XCTAssert(downloadTask?.state.isError ?? false)
+            
+            // STATE LOCKED TEST
+            downloadTask?.attemptPause()
+            XCTAssert(self.downloadTask?.state.isError == true)
+            
             self.compositeDisposable.dispose()
             weak var task = self.downloadTask
             self.downloadTask = nil
@@ -162,10 +167,14 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         )
         self.downloadTask = remoteFile.downloadTask2
         
+        self.downloadTask?.progressSignal.observeInterrupted {
+            XCTFail("This signal should never interrupt!")
+        }
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
             self.downloadTask?.attemptPause()
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             self.downloadTask?.start().start(self.observer)
         }
         
@@ -208,6 +217,14 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         switch result {
         case .completed:
             XCTAssert(self.downloadTask?.isComplete ?? false)
+            
+            // STATE LOCKED TEST
+            downloadTask?.attemptCancel()
+            XCTAssert(self.downloadTask?.isComplete == true)
+            downloadTask?.attemptPause()
+            XCTAssert(self.downloadTask?.isComplete == true)
+            
+            // RETAIN TEST
             self.compositeDisposable.dispose()
             weak var task = self.downloadTask
             self.downloadTask = nil

@@ -20,9 +20,6 @@ class NewDownloadTask: NewDownloadTaskProtocol {
     public let progressSignal: Signal<Double, Error>
     private let progressInput: Signal<Double, Error>.Observer
     
-    // Not sure if second should be Error or Never
-//    private var progressSignalsInput: Signal<Signal<Double, Error>, Error>.Observer
-    
     private var childProgress: Progress? {
         didSet {
             guard let childProgress = childProgress
@@ -58,28 +55,8 @@ class NewDownloadTask: NewDownloadTaskProtocol {
             then: statePipe.output
         )
         
-//        let progressSignalsPipe = Signal<Signal<Double, Error>, Error>.pipe()
-//        let flattenedSignal = progressSignalsPipe.output.flatten(.latest)
-        
-//        let disposable1 = flattenedSignal.observe(
-//            Signal<Signal<Double, Error>.Value, Error>.Observer(
-//                value: { val in
-//                    statePipe.input.send(value: .loading)
-//                }, failed: { error in
-//                    statePipe.input.send(value: .failure(error: error))
-//                }, completed: {
-//                    statePipe.input.send(value: .complete)
-//                    statePipe.input.sendCompleted()
-//                }, interrupted: {
-//                    print("DIDNT THINK INTERRUPTIONS SHOULD BE HERE")
-//                    // Does not bubble up to outter from inner signals.
-//                }
-//            )
-//        )
-        
         let progressPipe = Signal<Double, Error>.pipe()
         
-//        self.progressSignalsInput = progressSignalsPipe.input
         self.progress = progress
         self.hardRefresh = hardRefresh
         self.remoteFile = remoteFile
@@ -88,27 +65,12 @@ class NewDownloadTask: NewDownloadTaskProtocol {
         self.progressSignal = progressPipe.output
         self.progressInput = progressPipe.input
         
-//        self.progressSignal.producer.startWithInterrupted {
-//            print("DIDNT THINK 2 INTERRUPTIONS SHOULD BE HERE")
-//        }
-        
         // MARK: - INIT COMPLETE
         
         let disposable2 = self.stateProperty.producer.startWithValues {
             switch $0 {
-            case .paused:
-                // REMOVING ALL OBSERVERS WILL CAUSE HANLDER TO NOT BE CALLED. NOT USING YET, SO NOT A BIG DEAL.
-//                self.storageDownloadTask?.removeAllObservers()
-                break
                 
-            case .complete:
-                // These are not required, but cleaning up.
-                self.storageDownloadTask?.removeAllObservers()
-                self.lifecycleDisposable.dispose()
-                self.storageDownloadTask = nil
-                break
-                
-            case .failure:
+            case .complete, .failure:
                 // These are not required, but cleaning up.
                 self.storageDownloadTask?.removeAllObservers()
                 self.storageDownloadTask = nil
@@ -117,13 +79,11 @@ class NewDownloadTask: NewDownloadTaskProtocol {
                 self.lifecycleDisposable.dispose()
                 break
                 
-            case .loading, .initialized: break
+            case .loading, .initialized, .paused: break
             }
         }
         
-//        self.lifecycleDisposable.add(disposable1)
         self.lifecycleDisposable.add(disposable2)
-        
     }
     
 }
@@ -142,19 +102,13 @@ extension NewDownloadTask {
     func start() -> SignalProducer<Double, Error> {
         guard !self.isComplete
         else {
-            return SignalProducer<Double, Error>.init(
-                value: self.percentComplete
-            )
+            return self.progressSignalProducer
         }
         guard hardRefresh || !isLocal
         else {
             progress.completedUnitCount = progress.totalUnitCount
-//            self.progressInput.send(value: 1.0)
-//            self.progressSignalsInput.sendCompleted()
             self.state = .complete
-            return SignalProducer<Double, Error>.init(
-                value: self.percentComplete
-            )
+            return self.progressSignalProducer
         }
         
         self.state = .loading
@@ -164,44 +118,15 @@ extension NewDownloadTask {
         } else {
             self.createNew()
         }
-        return SignalProducer<Double, Error>.init { (input, lifetime) in
-            input.send(value: self.percentComplete)
-            let progDisposable = self.progressSignal.observe(input)
-            
-            let state = self.state
-            switch state {
-            case .complete: input.sendCompleted()
-            case .failure(let error): input.send(error: error)
-            case .paused: input.sendCompleted()
-            default: break
-            }
-            
-            let stateDisposable = self.stateProperty.producer.startWithValues{
-                switch $0 {
-                case .paused: input.sendInterrupted()
-                default: break
-                }
-            }
-            
-            lifetime.observeEnded {
-                progDisposable?.dispose()
-                stateDisposable.dispose()
-            }
-            
-        }
         
-//        guard let downloadTask = self.storageDownloadTask
-//        else {
-//            return self.createNew()
-//        }
-//        return self.resumePrevious(downloadTask: downloadTask)
+        return self.progressSignalProducer
     }
-    
     
     func attemptCancel(){
         self.state = .failure(error: DownloadTaskError.userCancelled)
         self.storageDownloadTask?.cancel()
     }
+    
     func attemptPause(){
         self.state = .paused
         self.storageDownloadTask?.pause()
@@ -213,8 +138,10 @@ extension NewDownloadTask {
 // MARK: - CREATE / RESUME HELPERS
 extension NewDownloadTask {
     
-    private func createNew() /*-> SignalProducer<Double, Error> */{
-//        let progressSignal = Signal<Double, Error>.pipe()
+    /// Creates new download task and sets it at the class variable.
+    ///
+    /// Sets all observers.
+    private func createNew() {
         
         let downloadTask = remoteFile.ref.writeInterface(
             toFile: localFile.url,
@@ -223,17 +150,8 @@ extension NewDownloadTask {
         self.storageDownloadTask = downloadTask
         
         setObservations(
-            downloadTask: downloadTask//,
-//            progressSignalInput: progressSignal.input
+            downloadTask: downloadTask
         )
-        
-//        self.progressSignalsInput.send(value: progressSignal.output)
-        
-        // Not sure I want this???
-//        DispatchQueue.main.asyncAfter(deadline: .now()) {
-//            progressSignal.input.send(value: 0.0)
-//        }
-//        return progressSignal.output.producer
     }
     
 }
@@ -242,6 +160,7 @@ extension NewDownloadTask {
 // MARK: - COMPUTED VARS
 extension NewDownloadTask {
     
+    /// Gets and sets the state property. When set to complete or error, the progress signal is completed or failed respectively.
     public private (set) var state: NewDownloadTaskState {
         get {
             self.stateProperty.value
@@ -262,11 +181,6 @@ extension NewDownloadTask {
         }
     }
     
-    struct ProgressSnapshot {
-        let progress: Progress
-    }
-    
-    
     var localFile: LocalFile {
         return remoteFile.localFile
     }
@@ -280,69 +194,50 @@ extension NewDownloadTask {
 // MARK: - OBSERVATIONS
 extension NewDownloadTask {
     private func setObservations(
-        downloadTask: StorageDownloadTaskInterface//,
-//        progressSignalInput: Signal<Double, Error>.Observer
+        downloadTask: StorageDownloadTaskInterface
     ){
         downloadTask.observeInterface(.failure, handler: self.observe)
-        downloadTask.observeInterface(.pause, handler: self.observe)
-        downloadTask.observeInterface(.resume, handler: self.observe)
+//        downloadTask.observeInterface(.pause, handler: self.observe)
+//        downloadTask.observeInterface(.resume, handler: self.observe)
         downloadTask.observeInterface(.success, handler: self.observe)
         downloadTask.observeInterface(.progress, handler:self.observe)
-        //storageDownloadTask?.observe(.unknown, handler: unknownHandler)
     }
     private func observe(
-        _ storageTaskSnapshot: StorageTaskSnapshotInterface//,
-//        progressSignalInput: Signal<Double, Error>.Observer
+        _ storageTaskSnapshot: StorageTaskSnapshotInterface
     ){
         switch storageTaskSnapshot.statusInterface {
         
         case .pause:
-            // Have to manually set state to paused because an inner signal's interruption is not bubbled up to the master signal in a flattened operator.
-            // Setting state first so testing can verify.
-            // This is consistent with how the other observers are set. Since they are set in init, they are called prior to the external signal observer.
-            self.state = .paused
-//            progressSignalInput.sendInterrupted()
+            // Setting state here would be redundant because state is set to pause immediately on pause() method.
+            // This could cause an issue if user pauses resumes prior to this event triggering, so leaving out.
+            // self.state = .paused
+            break
             
         case .failure:
             guard let error = storageTaskSnapshot.error
             else { return }
             self.state = .failure(error: error)
             
-            // PUT IN STATE SETTER
-//            self.progressSignalsInput.sendCompleted()
-//            progressSignalInput.send(error: error)
-            
         case .progress:
             guard let progress = storageTaskSnapshot.progress
             else { return }
+            
+            // The first Progress update that is sent is set as a child of this class's Progress.
             if childProgress == nil {
                 childProgress = progress
             }
             self.progressInput.send(value: progress.fractionCompleted)
-//            progressSignalInput.send(value: progress.fractionCompleted)
             
-        case .resume:
-            break
-            // Not sure what I want to do here.
-//            self.state = .loading
-        
+        case .resume: break
+            
         case .success:
             self.state = .complete
-            
-            
-            // Signal of Signals must be completed prior to the signal for the completion to bubble up.
-//            self.progressSignalsInput.sendCompleted()
-//            progressSignalInput.sendCompleted()
             
         case .unknown: return
         }
     }
     
     private func downloadTaskComplete(url: URL?, error: Error?){
-        // !!! DO NOT USE !!!
-        // This handler is currently removed when pause is called.
-        // Will need to change pause handler to not call removeAllHandlers(), but instead remove the 5 observers individually.
-        // Then this can be used.
     }
 }
 

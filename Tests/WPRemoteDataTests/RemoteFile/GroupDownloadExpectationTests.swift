@@ -399,6 +399,9 @@ final class GroupDownloadExpectationTests: XCTestCase {
             downloadTasks: [subtask1!, subtask2!],
             hardRefresh: false
         )
+        self.downloadTask?.progressSignal.observeInterrupted {
+            XCTFail("This signal should never interrupt!")
+        }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
             self.downloadTask?.attemptPause()
@@ -459,6 +462,9 @@ final class GroupDownloadExpectationTests: XCTestCase {
             hardRefresh: false,
             downloadOrder: .parallel
         )
+        self.downloadTask?.progressSignal.observeInterrupted {
+            XCTFail("This signal should never interrupt!")
+        }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
             self.downloadTask?.attemptPause()
