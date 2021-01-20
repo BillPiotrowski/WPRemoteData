@@ -31,8 +31,9 @@ public class RemoteDataDownloadTask<
     public var remoteDataDocument: RemoteDoc
     
     
+    public let progressSignal: Signal<Double, Error>
     
-    
+    private let progressInput: Signal<Double, Error>.Observer
     
     
     
@@ -59,10 +60,12 @@ public class RemoteDataDownloadTask<
         
         
         
+        let pipe = Signal<Double, Error>.pipe()
         
         
+        self.progressInput = pipe.input
         self.hardRefresh = hardRefresh
-        
+        self.progressSignal = pipe.output
         self.stateProperty = stateProperty
         self.stateInput = statePipe.input
         self.progress = progress
@@ -99,8 +102,9 @@ extension RemoteDataDownloadTask: NewDownloadTaskProtocol where
         guard hardRefresh || !isLocal
         else {
             progress.completedUnitCount = progress.totalUnitCount
-//            self.progressSignalsInput.sendCompleted()
+            self.progressInput.sendCompleted()
             self.stateInput.send(value: .complete)
+            
             return SignalProducer<Double, Error>.init(
                 value: self.percentComplete
             )
@@ -117,10 +121,16 @@ extension RemoteDataDownloadTask: NewDownloadTaskProtocol where
             self.progress.completedUnitCount = self.progress.totalUnitCount
             self.stateInput.send(value: .complete)
             self.stateInput.sendCompleted()
+            
+            self.progressInput.send(value: 1.0)
+            self.progressInput.sendCompleted()
+            
+            // REMOVE THIS AND HAVE IT FOLLOR PROGRESS SIGNAL
             signalPipe.input.send(value: 1.0)
             signalPipe.input.sendCompleted()
         }.catch { error in
             self.stateInput.send(value: .failure(error: error))
+            self.progressInput.send(error: error)
             signalPipe.input.send(error: error)
         }
         return signalPipe.output.producer

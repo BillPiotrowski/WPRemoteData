@@ -20,7 +20,7 @@ public protocol NewDownloadTaskProtocol: class {
     /// Will send an error event on error.
     /// Strangely, interruptions do show up here.
     /// Interruptions will not bubble up and this signal is not affected by the stopping and starting of the signal producer on start. Which will interrupt on pause.
-//    var progressSignal: Signal<Double, Error> { get }
+    var progressSignal: Signal<Double, Error> { get }
     
     var progress: Progress { get }
     

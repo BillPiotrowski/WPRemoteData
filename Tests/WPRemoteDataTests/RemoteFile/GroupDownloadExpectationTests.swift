@@ -29,7 +29,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
     private lazy var observer = {
         Signal<Double, Error>.Observer(
             value: { progress in
-                print("PROGRESS: \(progress) vs. \(self.downloadTask!.progress.fractionCompleted)")
+                print("PROGRESS: \(self.downloadTask!.state) \(progress) vs. \(self.downloadTask!.progress.fractionCompleted)")
                 
                 // If both are local, this test can happen too quickly and be inaccurate when relying on the subtask isLocal guard instead of the group islocal guard.
 //                XCTAssert(progress == self.downloadTask?.progress.fractionCompleted)
@@ -93,7 +93,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 4 progress
         // 4 progress
         // complete
-        self.expect.expectedFulfillmentCount = 7
+        self.expect.expectedFulfillmentCount = 8
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -135,7 +135,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 4 progress
         // 4 progress
         // complete
-        self.expect.expectedFulfillmentCount = 8
+        self.expect.expectedFulfillmentCount = 9
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -179,7 +179,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 4 progress
         // 4 progress
         // complete
-        self.expect.expectedFulfillmentCount = 7
+        self.expect.expectedFulfillmentCount = 8
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -219,7 +219,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 4 progress
         // 2 progress
         // error
-        self.expect.expectedFulfillmentCount = 7
+        self.expect.expectedFulfillmentCount = 8
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -258,7 +258,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 3 progress
         // 2 progress
         // error
-        self.expect.expectedFulfillmentCount = 5
+        self.expect.expectedFulfillmentCount = 7
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -297,7 +297,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 4 progress
         // 1 progress
         // error
-        self.expect.expectedFulfillmentCount = 6
+        self.expect.expectedFulfillmentCount = 7
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -340,7 +340,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 2 progress
         // 2 progress
         // error
-        self.expect.expectedFulfillmentCount = 5
+        self.expect.expectedFulfillmentCount = 6
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -384,7 +384,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 1 pause
         // 5 progress
         // 1 complete
-        self.expect.expectedFulfillmentCount = 8
+        self.expect.expectedFulfillmentCount = 11
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -433,7 +433,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 1 pause
         // 6 progress
         // 1 complete
-        self.expect.expectedFulfillmentCount = 10
+        self.expect.expectedFulfillmentCount = 13
         
         let remoteFile1 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -597,7 +597,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 4 progress
         // 2 progress
         // complete
-        self.expect.expectedFulfillmentCount = 7
+        self.expect.expectedFulfillmentCount = 8
         
         
         let dummyData1 = DummyLocalData(
@@ -647,7 +647,7 @@ final class GroupDownloadExpectationTests: XCTestCase {
         // 4 progress
         // 4 progress
         // complete
-        self.expect.expectedFulfillmentCount = 7
+        self.expect.expectedFulfillmentCount = 8
         
         let dummyData1 = DummyLocalData(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
