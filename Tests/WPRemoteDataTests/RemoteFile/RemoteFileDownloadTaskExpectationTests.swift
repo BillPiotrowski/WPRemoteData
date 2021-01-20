@@ -50,11 +50,6 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
                 print("Interrupted")
                 XCTAssert(self.downloadTask?.state == .paused)
                 let firebaseTask = self.downloadTask!.storageDownloadTask as! DummyStorageDownloadTask
-                XCTAssert(firebaseTask.failureHandler == nil)
-                XCTAssert(firebaseTask.pauseHandler == nil)
-                XCTAssert(firebaseTask.progressHandler == nil)
-                XCTAssert(firebaseTask.resumeHandler == nil)
-                XCTAssert(firebaseTask.successHandler == nil)
 //                XCTAssert(self.downloadTask?.storageDownloadTask)
                 self.expect.fulfill()
             }
@@ -78,7 +73,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
     
     // MARK: - ERROR
     func testError() throws {
-        self.expect.expectedFulfillmentCount = 3
+        self.expect.expectedFulfillmentCount = 4
         
         let remoteFile = DummyRemoteFile(
             dummyID: TestRemoteFileName.error.rawValue
@@ -101,7 +96,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
     
     // MARK: - SIMPLE SUCCESS
     func testSimpleSuccess() throws {
-        self.expect.expectedFulfillmentCount = 5
+        self.expect.expectedFulfillmentCount = 6
         
         let remoteFile = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -126,7 +121,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
     // MARK: - CANCEL
     // Should Download task signal of signals complete after error? interrupt?
     func testCancel() throws {
-        self.expect.expectedFulfillmentCount = 4
+        self.expect.expectedFulfillmentCount = 5
         
         let remoteFile = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -160,7 +155,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         // 1 pause
         // 3 progress
         // complete
-        self.expect.expectedFulfillmentCount = 7
+        self.expect.expectedFulfillmentCount = 9
         
         let remoteFile = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -195,7 +190,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
     /// Expected to immediately send two events: a value (1.0) and a completion event after attempting to start a completed download.
     func testStartAfterComplete() throws {
         // 5 for the initial complete and 2 for the restart complete
-        self.expect.expectedFulfillmentCount = 7
+        self.expect.expectedFulfillmentCount = 8
         
         let remoteFile = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess.rawValue
@@ -259,7 +254,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
     // MARK: - HARD REFRESH
     /// Expected to create a normal download request with 5 status updates even though the file is local because hard refresh is selected.
     func testHardRefresh() throws {
-        self.expect.expectedFulfillmentCount = 5
+        self.expect.expectedFulfillmentCount = 6
         
         // Using a dummy data file as easiest way to save to disk.
         let dummyData = DummyLocalData(

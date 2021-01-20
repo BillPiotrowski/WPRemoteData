@@ -18,8 +18,7 @@ public protocol NewDownloadTaskProtocol: class {
     /// A signal that shows progress of the entire download – including subtasks. Reports the percent complete as fraction completed of Progress.
     /// Will send a final progress value when complete followed by a completion event.
     /// Will send an error event on error.
-    /// Strangely, interruptions do show up here.
-    /// Interruptions will not bubble up and this signal is not affected by the stopping and starting of the signal producer on start. Which will interrupt on pause.
+    /// Unlike the signal producer returned from the start() method, this signal will not pass interruptions.
     var progressSignal: Signal<Double, Error> { get }
     
     var progress: Progress { get }
@@ -49,3 +48,50 @@ extension NewDownloadTaskProtocol {
         return progress.fractionCompleted
     }
 }
+
+
+
+
+
+
+
+
+// MARK: - DEFINITIONS
+// This will need to be renamed and removed from namespace if this becomes the model for all download tasks.
+//extension NewDownloadTask {
+    public enum NewDownloadTaskState: Equatable {
+        public static func == (
+            lhs: NewDownloadTaskState, rhs: NewDownloadTaskState
+        ) -> Bool {
+            switch (lhs, rhs) {
+            case (.initialized, .initialized): return true
+            case (.loading, .loading): return true
+            case (.paused, .paused): return true
+            case (.complete, .complete): return true
+            case (.failure(let error1), .failure(let error2)):
+                return error1.localizedDescription == error2.localizedDescription
+            default: return false
+            }
+        }
+        
+        var isError: Bool {
+            switch self {
+            case .failure: return true
+            default: return false
+            }
+        }
+        var isComplete: Bool {
+            switch self {
+            case .complete: return true
+            default: return false
+            }
+        }
+        
+        case initialized
+        case loading
+        case paused
+        // Store localFile in completion
+        case complete
+        case failure(error: Error)
+    }
+//}
