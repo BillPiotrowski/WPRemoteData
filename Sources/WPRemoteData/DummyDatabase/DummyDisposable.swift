@@ -25,7 +25,6 @@ class DummyDisposable/*<Callback: Any>*/: NSObject {
 }
 extension DummyDisposable: ListenerRegistrationInterface {
     func remove() {
-        print("COMPLETED REMOVAL!!")
         self.isComplete = true
         self.removeCallback?()
 //        self.callback = nil

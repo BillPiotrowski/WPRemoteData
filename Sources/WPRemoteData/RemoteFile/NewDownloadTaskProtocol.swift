@@ -41,6 +41,12 @@ public protocol NewDownloadTaskProtocol: class {
     /// In this example, if the in-progress task does complete after the pause method is called, when the task is restarted, it will immediately return a progress of 1.0 and completion.
     var state: NewDownloadTaskState { get }
     
+    
+    /// Returns a Signal Producer with the Double indicating percentage complete from 0.0 to 1.0
+    ///
+    /// If there file is local and hardRefresh is set to false, it will immediately return a completed event.
+    ///
+    /// An attempt to start after the download has already completed will return a SignalProducer with an immediate value event (should be 1.0 since complete) and then a completion event.
     ///
     /// - todo: Design and test what happens when start() is called while already in a .loading state.
     ///
@@ -60,9 +66,9 @@ extension NewDownloadTaskProtocol {
     public static var defaultHardRefresh: Bool {
         false
     }
-    public var isComplete: Bool {
-        self.state.isComplete
-    }
+    public var isComplete: Bool { state.isComplete }
+    public var isError: Bool { state.isError }
+    public var isTerminated: Bool { state.isTerminated }
     
     public var percentComplete: Double {
         return progress.fractionCompleted
@@ -87,15 +93,25 @@ extension NewDownloadTaskProtocol {
             
             // !!! --- Order of events here is important. --- !!!
             
+            // 0.5) Ensure hasn't already failed
+            // Would prefer the state check below (2) to handle this, but for some reason, when task has already failed, it stops after sending the percentage value.
+            // Hopeing this does not cause any latency in creation.
+            guard !self.state.isError else {
+                input.send(error: DownloadTaskError.alreadyFailed)
+                return
+            }
+            
             // 1)
             input.send(value: self.percentComplete)
             
             // 2) Complete, if necessary.
             // Logically, would send the progress signal stream second to insure that all updates are caught,
             // But instead, checking for state so that a broken of completed stream is not sent (like would happen after task completion).
+            
             let state = self.state
             switch state {
             case .complete: input.sendCompleted()
+                // This should never fire because of guard above (0.5)
             case .failure(let error): input.send(error: error)
             case .paused: input.sendInterrupted()
             default: break
@@ -156,6 +172,10 @@ extension NewDownloadTaskProtocol {
             case .complete: return true
             default: return false
             }
+        }
+        /// Returns true if isComplete or isError
+        var isTerminated: Bool {
+            return self.isError || self.isComplete
         }
         
         case initialized

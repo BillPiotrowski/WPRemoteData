@@ -91,21 +91,11 @@ class NewDownloadTask: NewDownloadTaskProtocol {
 // MARK: - PUBLIC METHODS
 extension NewDownloadTask {
     
-    // Start creates a new signal and returns it / or producer.
-    // when state changes the state new value setter checks for pause -> interrupts. and completions and errors.
-    
-    /// Returns a Signal Producer with the Double indicating percentage complete from 0.0 to 1.0
-    ///
-    /// If there file is local and hardRefresh is set to false, it will immediately return a completed event.
-    ///
-    /// An attempt to start after the download has already completed will return a SignalProducer with an immediate value event (should be 1.0 since complete) and then a completion event.
     func start() -> SignalProducer<Double, Error> {
-        guard !self.isComplete
-        else {
+        guard !self.isTerminated else {
             return self.progressSignalProducer
         }
-        guard hardRefresh || !isLocal
-        else {
+        guard hardRefresh || !isLocal else {
             progress.completedUnitCount = progress.totalUnitCount
             self.state = .complete
             return self.progressSignalProducer

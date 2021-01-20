@@ -10,39 +10,34 @@ import Foundation
 import SPCommon
 import ReactiveSwift
 
+/// Class for downloading a RemoteDoc.
+///
+/// This has generic constraints for RemoteDoc and RemoteDoc.LocalDoc
+///
+/// Conformts to: `NewDownloadTaskProtocol`.
 public class RemoteDataDownloadTask<
     RemoteDoc: RemoteDataDownloadableDocument
-> {
-    public let stateProperty: Property<NewDownloadTaskState>
+> where
+    RemoteDoc.Data == RemoteDoc.LocalDoc.O,
+    RemoteDoc.Data.RemoteDoc == RemoteDoc,
+    RemoteDoc.LocalDoc == RemoteDoc.LocalDoc.O.File,
+    RemoteDoc.LocalDoc.O: LocalOpenableData
+{
     private let stateInput: Signal<NewDownloadTaskState, Never>.Observer
-    
-    public private (set) var progress: Progress
-    
-    public var state: NewDownloadTaskState { self.stateProperty.value }
-    
-    private let localFile: RemoteDoc.LocalDoc
-    
-    public var isLocal: Bool {
-        return localFile.exists
-    }
-    
-    public var hardRefresh: Bool
-    
-    public var remoteDataDocument: RemoteDoc
-    
-    
-    public let progressSignal: Signal<Double, Error>
+    public let stateProperty: Property<NewDownloadTaskState>
     
     private let progressInput: Signal<Double, Error>.Observer
+    public let progressSignal: Signal<Double, Error>
     
+    public private (set) var progress: Progress
+    public var hardRefresh: Bool
+    private let disposable = CompositeDisposable()
     
+    private let localFile: RemoteDoc.LocalDoc
+    private var remoteDataDocument: RemoteDoc
     
-    let disposable = CompositeDisposable()
-    
-    
-    fileprivate init(
+    init(
         remoteDataDocument: RemoteDoc,
-        localFile: RemoteDoc.LocalDoc,
         hardRefresh: Bool? = nil
     ){
         let hardRefresh = hardRefresh ?? NewGroupDownloadTask.defaultHardRefresh
@@ -58,10 +53,7 @@ public class RemoteDataDownloadTask<
             then: statePipe.output
         )
         
-        
-        
         let pipe = Signal<Double, Error>.pipe()
-        
         
         self.progressInput = pipe.input
         self.hardRefresh = hardRefresh
@@ -70,12 +62,10 @@ public class RemoteDataDownloadTask<
         self.stateInput = statePipe.input
         self.progress = progress
         self.remoteDataDocument = remoteDataDocument
-        self.localFile = localFile
+        self.localFile = remoteDataDocument.localDocument
         
     }
 }
-
-
 
 extension RemoteDataDownloadTask: NewDownloadTaskProtocol where
     RemoteDoc.Data == RemoteDoc.LocalDoc.O,
@@ -83,70 +73,93 @@ extension RemoteDataDownloadTask: NewDownloadTaskProtocol where
     RemoteDoc.LocalDoc == RemoteDoc.LocalDoc.O.File,
     RemoteDoc.LocalDoc.O: LocalOpenableData
 {
-    convenience init(
-        remoteDataDocument: RemoteDoc
-    ){
-        self.init(
-            remoteDataDocument: remoteDataDocument,
-            localFile: remoteDataDocument.localDocument
-        )
-    }
-    
+//    convenience init(
+//        remoteDataDocument: RemoteDoc,
+//
+//    ){
+//        self.init(
+//            remoteDataDocument: remoteDataDocument,
+//            localFile: remoteDataDocument.localDocument
+//        )
+//    }
+}
+
+// MARK: - START
+extension RemoteDataDownloadTask {
     public func start() -> SignalProducer<Double, Error> {
-        guard !self.isComplete
-        else {
-            return SignalProducer<Double, Error>.init(
-                value: self.percentComplete
-            )
+        guard !self.isTerminated else {
+            return self.progressSignalProducer
         }
-        guard hardRefresh || !isLocal
-        else {
+        guard hardRefresh || !isLocal else {
             progress.completedUnitCount = progress.totalUnitCount
-            self.progressInput.sendCompleted()
-            self.stateInput.send(value: .complete)
-            
-            return SignalProducer<Double, Error>.init(
-                value: self.percentComplete
-            )
+            self.state = .complete
+            return self.progressSignalProducer
         }
         
+        self.state = .loading
         
-        let signalPipe = Signal<Double, Error>.pipe()
-        
-        // LOADING WILL NEVER SEND
-//        self.stateInput.send(value: .loading)
-        
+        // weak self is required for testing. Will retain otherwise.
         self.remoteDataDocument.download()
-        .then { [unowned self] doc in
-            self.progress.completedUnitCount = self.progress.totalUnitCount
-            self.stateInput.send(value: .complete)
-            self.stateInput.sendCompleted()
+        .then { [weak self] doc in
             
-            self.progressInput.send(value: 1.0)
-            self.progressInput.sendCompleted()
+            // 1) Complete Progress object
+            self?.progress.completedUnitCount = self?.progress.totalUnitCount ?? 1
             
-            // REMOVE THIS AND HAVE IT FOLLOR PROGRESS SIGNAL
-            signalPipe.input.send(value: 1.0)
-            signalPipe.input.sendCompleted()
-        }.catch { error in
-            self.stateInput.send(value: .failure(error: error))
-            self.progressInput.send(error: error)
-            signalPipe.input.send(error: error)
+            // 2) Send Progress value to subscribers
+            self?.progressInput.send(value: 1.0)
+            
+            // 3) Set state, which will terminate state & progress signals.
+            self?.state = .complete
+            
+        }.catch { [weak self] error in
+            self?.state = .failure(error: error)
         }
-        return signalPipe.output.producer
+        
+        return self.progressSignalProducer
     }
 }
 
-
-
+// MARK: - PAUSE / CANCEL
 extension RemoteDataDownloadTask {
     public func attemptPause() {
+        self.state = .paused
         // Could potentially stop the writing of the file to local?
         return
     }
     
     public func attemptCancel() {
+        self.state = .failure(error: DownloadTaskError.userCancelled)
         // Could potentially stop the writing of the file to local?
         return
     }
+}
+
+// MARK: - STATE
+extension RemoteDataDownloadTask {
+    
+    public private (set) var state: NewDownloadTaskState {
+        get {
+            self.stateProperty.value
+        }
+        set {
+            self.stateInput.send(value: newValue)
+            switch newValue {
+            case .complete:
+                self.stateInput.sendCompleted()
+                self.progressInput.sendCompleted()
+            case .failure(let error):
+                self.stateInput.sendCompleted()
+                self.progressInput.send(error: error)
+            case .initialized: break
+            case .loading: break
+            case .paused: break
+            }
+        }
+    }
+}
+
+// MARK: - COMPUTED VARS
+extension RemoteDataDownloadTask {
+    
+    public var isLocal: Bool { localFile.exists }
 }

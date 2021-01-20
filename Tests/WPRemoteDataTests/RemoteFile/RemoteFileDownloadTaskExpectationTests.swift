@@ -10,52 +10,7 @@ import ReactiveSwift
 /// Tests to verify correct behavior over period of time for remote file download tasks.
 ///
 /// - warning: Any test that does not use the expectation var will  fail.
-final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
-    /// Shared expectation.
-    ///
-    /// - warning: If this is not used in the test, the test will fail!
-    private var expect: XCTestExpectation = XCTestExpectation()
-    
-    /// Shared download task. Global so that shared observer can reference.
-    private var downloadTask: NewDownloadTask?
-    
-    private let compositeDisposable = CompositeDisposable()
-    
-    /// Shared observer. When progress is observed, it checks to make sure downloadTask state matches and sends a fulfill to expectation.
-    ///
-    /// Ensures that when complete, the progress is 1.0
-    ///
-    /// - note: Also verifies that progress matches download state progress (which is parent of the Firebase progress that the signal is derived from).
-    private lazy var observer = {
-        Signal<Double, Error>.Observer(
-            value: { progress in
-                print("PROGRESS: \(progress)")
-                XCTAssert(progress == self.downloadTask?.progress.fractionCompleted)
-                XCTAssert(
-                    self.downloadTask?.state == .loading ||
-                    // Will send a single progress if attempting to restart when already complete.
-                    (self.downloadTask?.isComplete ?? false)
-                )
-                self.expect.fulfill()
-            }, failed: { error in
-                print("ERROR: \(error)")
-                XCTAssert(self.downloadTask?.state.isError ?? false)
-                self.expect.fulfill()
-            }, completed: {
-                print("COMPLETE")
-                XCTAssert(self.downloadTask?.state == .complete)
-                XCTAssert(self.downloadTask?.percentComplete == 1.0)
-                self.expect.fulfill()
-            }, interrupted: {
-                print("Interrupted")
-                XCTAssert(self.downloadTask?.state == .paused)
-                let firebaseTask = self.downloadTask!.storageDownloadTask as! DummyStorageDownloadTask
-//                XCTAssert(self.downloadTask?.storageDownloadTask)
-                self.expect.fulfill()
-            }
-        )
-    }()
-    
+final class RemoteFileDownloadTaskExpectationTests: DownloadTaskTests {
     
     // MARK: - SETUP
     override func setUpWithError() throws {
@@ -80,18 +35,20 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         )
         self.downloadTask = remoteFile.downloadTask2
         
-        downloadTask?.start().start(self.observer)
+        self.assertFail(timeout: 3.0)
+    }
+    
+    
+    // MARK: - RESTART AFTER ERROR
+    func testRestartAfterFail() throws {
+        self.expect.expectedFulfillmentCount = 5
         
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 3.0)
-        switch result {
-        case .completed:
-            XCTAssert(downloadTask?.state.isError ?? false)
-            self.compositeDisposable.dispose()
-            weak var task = self.downloadTask
-            self.downloadTask = nil
-            XCTAssert(task == nil)
-        default: XCTFail("Failed to complete.")
-        }
+        let remoteFile = DummyRemoteFile(
+            dummyID: TestRemoteFileName.error.rawValue
+        )
+        self.downloadTask = remoteFile.downloadTask2
+        
+        self.assertRestartAfterError(retryDelay: 3, timeout: 4)
     }
     
     // MARK: - SIMPLE SUCCESS
@@ -103,19 +60,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         )
         self.downloadTask = remoteFile.downloadTask2
         
-        let disposabe1 = downloadTask?.start().start(self.observer)
-        self.compositeDisposable.add(disposabe1)
-        
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 6.5)
-        switch result {
-        case .completed:
-            XCTAssert(downloadTask?.state == .complete)
-            self.compositeDisposable.dispose()
-            weak var task = self.downloadTask
-            self.downloadTask = nil
-            XCTAssert(task == nil)
-        default: XCTFail("Failed to complete.")
-        }
+        self.assertSuccess(timeout: 6.5)
     }
     
     // MARK: - CANCEL
@@ -128,29 +73,9 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         )
         self.downloadTask = remoteFile.downloadTask2
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            self.downloadTask?.attemptCancel()
-        }
-        
-        downloadTask?.start().start(self.observer)
-        
-        
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 4)
-        switch result {
-        case .completed:
-            XCTAssert(downloadTask?.state.isError ?? false)
-            
-            // STATE LOCKED TEST
-            downloadTask?.attemptPause()
-            XCTAssert(self.downloadTask?.state.isError == true)
-            
-            self.compositeDisposable.dispose()
-            weak var task = self.downloadTask
-            self.downloadTask = nil
-            XCTAssert(task == nil)
-        default: XCTFail("Failed to complete.")
-        }
+        self.assertCancel(cancelDelay: 1.6, timeout: 4)
     }
+    
     
     
     // MARK: - PAUSE AND RESUME
@@ -167,30 +92,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         )
         self.downloadTask = remoteFile.downloadTask2
         
-        self.downloadTask?.progressSignal.observeInterrupted {
-            XCTFail("This signal should never interrupt!")
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-            self.downloadTask?.attemptPause()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            self.downloadTask?.start().start(self.observer)
-        }
-        
-        downloadTask?.start().start(self.observer)
-        
-        
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 10)
-        switch result {
-        case .completed:
-            XCTAssert(downloadTask?.state.isComplete ?? false)
-            self.compositeDisposable.dispose()
-            weak var task = self.downloadTask
-            self.downloadTask = nil
-            XCTAssert(task == nil)
-        default: XCTFail("Failed to complete.")
-        }
+        self.assertPauseAndResume(pauseDelay: 1.1, restartDelay: 1.5, timeout: 10)
     }
     
     
@@ -206,31 +108,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         )
         self.downloadTask = remoteFile.downloadTask2
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            self.downloadTask?.start().start(self.observer)
-        }
-        
-        downloadTask?.start().start(self.observer)
-        
-        
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 6.5)
-        switch result {
-        case .completed:
-            XCTAssert(self.downloadTask?.isComplete ?? false)
-            
-            // STATE LOCKED TEST
-            downloadTask?.attemptCancel()
-            XCTAssert(self.downloadTask?.isComplete == true)
-            downloadTask?.attemptPause()
-            XCTAssert(self.downloadTask?.isComplete == true)
-            
-            // RETAIN TEST
-            self.compositeDisposable.dispose()
-            weak var task = self.downloadTask
-            self.downloadTask = nil
-            XCTAssert(task == nil)
-        default: XCTFail("Failed to complete.")
-        }
+        self.assertStartAfterSuccess(retryDelay: 3.0, timeout: 6.5)
     }
     
     
@@ -253,18 +131,7 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
         
         self.downloadTask = remoteFile.downloadTask2
         
-        downloadTask?.start().start(self.observer)
-        
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 2.5)
-        switch result {
-        case .completed:
-            XCTAssert(downloadTask?.isComplete ?? false)
-            self.compositeDisposable.dispose()
-            weak var task = self.downloadTask
-            self.downloadTask = nil
-            XCTAssert(task == nil)
-        default: XCTFail("Failed to complete.")
-        }
+        self.assertSuccess(timeout: 2.5)
     }
     
     
@@ -289,18 +156,8 @@ final class RemoteFileDownloadTaskExpectationTests: XCTestCase {
             hardRefresh: true
         )
         
-        downloadTask?.start().start(self.observer)
+        self.assertSuccess(timeout: 3.5)
         
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 3.5)
-        switch result {
-        case .completed:
-            XCTAssert(downloadTask?.isComplete ?? false)
-            self.compositeDisposable.dispose()
-            weak var task = self.downloadTask
-            self.downloadTask = nil
-            XCTAssert(task == nil)
-        default: XCTFail("Failed to complete.")
-        }
     }
     
     

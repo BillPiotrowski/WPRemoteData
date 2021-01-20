@@ -65,6 +65,16 @@ extension RemoteDataDownloadableDocument where
             remoteDataDocument: self
         )
     }
+    
+    public func downloadTask(
+        hardRefresh: Bool? = nil
+    ) -> RemoteDataDownloadTask<Self> {
+        RemoteDataDownloadTask(
+            remoteDataDocument: self,
+            hardRefresh: hardRefresh
+        )
+    }
+    
     /// Unnecessary conformance to RemoteDownloadable.
     ///
     /// Would like to remove this in future.

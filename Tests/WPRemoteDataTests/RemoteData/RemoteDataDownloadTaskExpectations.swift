@@ -5,64 +5,14 @@ import ReactiveSwift
 
 
 
+
+
 // Test retain cycle for Download Task and it's inner elements.
 
 /// Tests to verify correct behavior over period of time for remote file download tasks.
 ///
 /// - warning: Any test that does not use the expectation var will  fail.
-final class RemoteDataDownloadTaskExpectations: XCTestCase {
-    /// Shared expectation.
-    ///
-    /// - warning: If this is not used in the test, the test will fail!
-    private var expect: XCTestExpectation = XCTestExpectation()
-    
-    /// Shared download task. Global so that shared observer can reference.
-    private var downloadTask: RemoteDataDownloadTask<TestDocument>?
-    
-    private let compositeDisposable = CompositeDisposable()
-    
-    /// Shared observer. When progress is observed, it checks to make sure downloadTask state matches and sends a fulfill to expectation.
-    ///
-    /// Ensures that when complete, the progress is 1.0
-    ///
-    /// - note: Also verifies that progress matches download state progress (which is parent of the Firebase progress that the signal is derived from).
-    private lazy var observer = {
-        Signal<Double, Error>.Observer(
-            value: { progress in
-                print("PROGRESS: \(progress) vs. \(self.downloadTask!.progress.fractionCompleted)")
-                
-                // If both are local, this test can happen too quickly and be inaccurate when relying on the subtask isLocal guard instead of the group islocal guard.
-//                XCTAssert(progress == self.downloadTask?.progress.fractionCompleted)
-                
-                XCTAssert(
-                    self.downloadTask?.state == .loading ||
-                    // Will send a single progress if attempting to restart when already complete.
-                    (self.downloadTask?.isComplete ?? false)
-                )
-                self.expect.fulfill()
-            }, failed: { error in
-                print("ERROR: \(error)")
-                XCTAssert(self.downloadTask?.state.isError ?? false)
-                self.expect.fulfill()
-            }, completed: {
-                print("COMPLETE: \(self.downloadTask!.progress.fractionCompleted)")
-                XCTAssert(self.downloadTask?.state == .complete)
-                XCTAssert(self.downloadTask?.percentComplete == 1.0)
-                self.expect.fulfill()
-            }, interrupted: {
-                print("Interrupted")
-                XCTAssert(self.downloadTask?.state == .paused)
-//                let firebaseTask = self.downloadTask!.storageDownloadTask as! DummyStorageDownloadTask
-//                XCTAssert(firebaseTask.failureHandler == nil)
-//                XCTAssert(firebaseTask.pauseHandler == nil)
-//                XCTAssert(firebaseTask.progressHandler == nil)
-//                XCTAssert(firebaseTask.resumeHandler == nil)
-//                XCTAssert(firebaseTask.successHandler == nil)
-//                XCTAssert(self.downloadTask?.storageDownloadTask)
-                self.expect.fulfill()
-            }
-        )
-    }()
+final class RemoteDataDownloadTaskExpectations: DownloadTaskTests {
     
     
     // MARK: - SETUP
@@ -87,53 +37,130 @@ final class RemoteDataDownloadTaskExpectations: XCTestCase {
         try localFile3.delete()
     }
     
-    
-    func testDownload(){
-        self.expect.expectedFulfillmentCount = 2
+    // MARK: - TEST SUCCESS
+    func testSuccess(){
+        self.expect.expectedFulfillmentCount = 3
         
         let remoteDoc = TestDocument(
             testDataID: DummyDataDocID.quickSuccess.rawValue
         )
         self.downloadTask = remoteDoc.downloadTask
         
-        let disposable = self.downloadTask?.start().start(self.observer)
-        self.compositeDisposable.add(disposable)
+        self.assertSuccess(timeout: 2)
         
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 3)
-        switch result {
-        case .completed:
-            XCTAssert(downloadTask?.isComplete == true)
-//            self.compositeDisposable.dispose()
-//            weak var task = self.downloadTask
-//            self.downloadTask = nil
-//            XCTAssert(task == nil)
-        case .timedOut: XCTFail("TIMED OUT.")
-        default: XCTFail("Failed to complete.")
-        }
     }
     
+    // MARK: - TEST FAILURE
     func testFailure(){
-        self.expect.expectedFulfillmentCount = 1
+        self.expect.expectedFulfillmentCount = 2
         
         let remoteDoc = TestDocument(
             testDataID: DummyDataDocID.failure.rawValue
         )
         self.downloadTask = remoteDoc.downloadTask
         
-        let disposable = self.downloadTask?.start().start(self.observer)
-        self.compositeDisposable.add(disposable)
+        self.assertFail(timeout: 3)
+    }
+    
+    
+    // MARK: - TEST CANCEL
+    func testCancel(){
+        self.expect.expectedFulfillmentCount = 2
         
-        let result = XCTWaiter.wait(for: [self.expect], timeout: 3)
-        switch result {
-        case .completed:
-            XCTAssert(downloadTask?.state.isError == true)
-//            self.compositeDisposable.dispose()
-//            weak var task = self.downloadTask
-//            self.downloadTask = nil
-//            XCTAssert(task == nil)
-        case .timedOut: XCTFail("TIMED OUT.")
-        default: XCTFail("Failed to complete.")
-        }
+        let remoteDoc = TestDocument(
+            testDataID: DummyDataDocID.failure.rawValue
+        )
+        self.downloadTask = remoteDoc.downloadTask
+        
+        self.assertCancel(
+            cancelDelay: 0.8,
+            timeout: 2
+        )
+    }
+    
+    
+    // MARK: - TEST PAUSE AND RESUME
+    func testPauseAndResume(){
+        self.expect.expectedFulfillmentCount = 4
+        
+        let remoteDoc = TestDocument(
+            testDataID: DummyDataDocID.quickSuccess.rawValue
+        )
+        self.downloadTask = remoteDoc.downloadTask
+        
+        self.assertPauseAndResume(
+            pauseDelay: 0.8,
+            restartDelay: 2,
+            timeout: 4
+        )
+        
+    }
+    
+    
+    // MARK: - START AFTER SUCCESS
+    func testStartAfterSuccess(){
+        self.expect.expectedFulfillmentCount = 5
+        
+        let remoteDoc = TestDocument(
+            testDataID: DummyDataDocID.quickSuccess.rawValue
+        )
+        self.downloadTask = remoteDoc.downloadTask
+    
+        self.assertStartAfterSuccess(retryDelay: 2, timeout: 5)
+        
+    }
+    
+    
+    // MARK: - TEST ALREADY LOCAL
+    func testAlreadyLocal() throws {
+        self.expect.expectedFulfillmentCount = 2
+        
+        let remoteDoc = TestDocument(
+            testDataID: DummyDataDocID.quickSuccess.rawValue
+        )
+        
+        // SAVE TO LOCAL
+        try remoteDoc.localDocument.archive(dictionary: [:])
+        
+        self.downloadTask = remoteDoc.downloadTask
+        
+        // ASSERT
+        self.assertSuccess(timeout: 2)
+        
+    }
+    
+    // MARK: - TEST HARD REFRESH
+    func testHardRefresh() throws {
+        self.expect.expectedFulfillmentCount = 3
+        
+        let remoteDoc = TestDocument(
+            testDataID: DummyDataDocID.quickSuccess.rawValue
+        )
+        
+        // SAVE TO LOCAL
+        try remoteDoc.localDocument.archive(dictionary: [:])
+        
+        self.downloadTask = remoteDoc.downloadTask(hardRefresh: true)
+        
+        // ASSERT
+        self.assertSuccess(timeout: 2)
+        
+    }
+    
+    
+    // MARK: - TEST RESTART AFTER FAIL
+    func testRestartAfterFail() throws {
+        self.expect.expectedFulfillmentCount = 3
+        
+        let remoteDoc = TestDocument(
+            testDataID: DummyDataDocID.failure.rawValue
+        )
+        
+        self.downloadTask = remoteDoc.downloadTask(hardRefresh: true)
+        
+        // ASSERT
+        self.assertRestartAfterError(retryDelay: 3, timeout: 7)
+        
     }
 
 }
