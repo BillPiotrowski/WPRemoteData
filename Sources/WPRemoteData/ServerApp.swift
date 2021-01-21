@@ -21,6 +21,7 @@ public class ServerAppStarter {
     /// Instantiation of Firestore database or injected class for testing.
     let db: DatabaseInterface
     let storage: StorageInterface
+    let testDataDictionaries: [String: [String: Any]]
     
     /// The singleton version of this class.
     ///
@@ -33,14 +34,16 @@ public class ServerAppStarter {
     
 // MARK: - INIT
     private init() {
-        let config = ServerAppStarter.config ?? Config(forTesting: false)
+        let config = ServerAppStarter.config ?? ServerAppStarter.defaultConfiguration
         switch config.forTesting {
         case true:
             self.db = DummyDatabase.shared
             self.storage = DummyStorage()
+            self.testDataDictionaries = config.testDataDictionaries ?? [:]
         case false:
             self.db = Firestore.firestore()
             self.storage = Storage.storage()
+            self.testDataDictionaries = [:]
         }
     }
     
@@ -66,7 +69,10 @@ extension ServerAppStarter {
 extension ServerAppStarter {
     /// Sets the default configuration to production server.
     private static var defaultConfiguration: Config {
-        Config(forTesting: false)
+        Config(
+            forTesting: false,
+            testDataDictionaries: nil
+        )
     }
 }
 
@@ -82,5 +88,6 @@ extension ServerAppStarter {
     /// https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp
     public struct Config {
         var forTesting: Bool
+        let testDataDictionaries: [String: [String: Any]]?
     }
 }

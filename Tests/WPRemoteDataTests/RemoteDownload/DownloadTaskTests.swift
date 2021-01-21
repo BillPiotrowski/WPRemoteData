@@ -12,7 +12,7 @@ class DownloadTaskTests: XCTestCase {
     var progressSigTerminationExp: XCTestExpectation = XCTestExpectation()
     
     /// Shared download task. Global so that shared observer can reference.
-    var downloadTask: NewDownloadTaskProtocol?
+    var downloadTask: DownloadTaskProtocol?
     
     let compositeDisposable = CompositeDisposable()
     
@@ -63,6 +63,7 @@ class DownloadTaskTests: XCTestCase {
         // ASSERT SIGNAL COMPLETES
         self.progressSigTerminationExp.expectedFulfillmentCount = 1
         self.downloadTask?.progressSignal.observeCompleted {
+            print("PROGRESS SIGNAL COMPLETED!!")
             self.progressSigTerminationExp.fulfill()
         }
         

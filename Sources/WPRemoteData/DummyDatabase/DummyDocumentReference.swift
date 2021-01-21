@@ -71,21 +71,34 @@ extension DummyDocumentReference {
     func getDocumentInterface(
         completion: @escaping (DocumentSnapshotInterface?, Error?) -> Void
     ) {
-        switch documentID {
-        case DummyDataDocID.failure.rawValue:
-            let error = NSError(domain: "no doc", code: 1)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-                completion(nil, error)
-            }
-        default:
+        if let dictionary = self.dictionaries[documentID] {
             let snapshot = DummyDocumentSnapshot(
                 documentID: self.documentID,
-                dataVal: ["propert1":"value1"]
+                dataVal: dictionary
             )
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 completion(snapshot, nil)
             }
+        } else {
+            switch documentID {
+            case DummyDataDocID.failure.rawValue:
+                let error = NSError(domain: "no doc", code: 1)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                    completion(nil, error)
+                }
+            default:
+                let snapshot = DummyDocumentSnapshot(
+                    documentID: self.documentID,
+                    dataVal: ["propert1":"value1"]
+                )
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                    completion(snapshot, nil)
+                }
+            }
         }
+    }
+    var dictionaries: [String: [String: Any]] {
+        return ServerAppStarter.shared.testDataDictionaries
     }
 }
 

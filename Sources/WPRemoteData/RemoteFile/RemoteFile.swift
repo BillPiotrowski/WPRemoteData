@@ -8,6 +8,8 @@
 
 import Foundation
 import SPCommon
+import ReactiveSwift
+import Promises
 
 
 
@@ -17,7 +19,6 @@ public protocol RemoteFileProtocol: RemoteDataItem, RemoteDownloadable {
     var location: RemoteFileFolderProtocol { get }
     var name: String { get }
     var localFile: LocalFile { get }
-//    init(remoteFileFolder: RemoteFileFolderProtocol, file: String) throws
 }
 
 // MARK: - CONFORM: RemoteDataItem
@@ -50,11 +51,8 @@ extension RemoteFileVariableChild {
 
 
 
-
 public protocol RemoteDownloadable {
-    var downloadTaskProtocol: DownloadTaskProtocol { get }
 }
-
 extension RemoteFileProtocol {
     
     public var isLocal: Bool {
@@ -79,51 +77,37 @@ extension RemoteFileProtocol /*: RemoteDownloadable*/ {
     public var ref: StorageReferenceInterface {
         return location.locationInterface.childInterface(name)
     }
-    public var downloadTaskProtocol: DownloadTaskProtocol {
-        return downloadTask
+    public var downloadTask2: RemoteFileDownloadTask {
+        return RemoteFileDownloadTask(remoteFile: self, hardRefresh: false)
     }
-    static func writeToLocal(
-        storageDocument: RemoteFileProtocol,
-        localDocument: LocalFile,
-        handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
-    ) -> RemoteFileDownloadTask {
-        let downloadTask = Self.downloadTask(
-            storageDocument: storageDocument,
-            localDocument: localDocument,
-            handler: handler
-        )
-        downloadTask.hardRefresh = true
-        downloadTask.begin()
-        return downloadTask
-    }
-    static func downloadTask(
-        storageDocument: RemoteFileProtocol,
-        localDocument: LocalFile,
-        handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil
-    ) -> RemoteFileDownloadTask {
-        return RemoteFileDownloadTask(remoteFile: storageDocument, handler: handler)
-    }
-    static func write(_ storageDocument: RemoteFileProtocol, toFile: LocalFile) -> RemoteFileDownloadTask {
-        return Self.writeToLocal(storageDocument: storageDocument, localDocument: toFile)
-    }
-    public func writeToLocal(handler: ((DownloadTaskRoot.CompletionStatus, DownloadTaskSnapshot) -> Void)? = nil) -> RemoteFileDownloadTask {
-        return Self.writeToLocal(storageDocument: self, localDocument: localFile, handler: handler)
-    }
-    public var downloadTask: RemoteFileDownloadTask {
-        return Self.downloadTask(storageDocument: self, localDocument: localFile)
-    }
-    
-    var downloadTask2: NewDownloadTask {
-        return NewDownloadTask(remoteFile: self, hardRefresh: false)
-    }
-    func createDownloadTask(
+    public func createDownloadTask(
         hardRefresh: Bool? = nil
-    ) -> NewDownloadTask {
+    ) -> RemoteFileDownloadTask {
         let hardRefresh = hardRefresh ?? false
-        return NewDownloadTask(
+        return RemoteFileDownloadTask(
             remoteFile: self,
             hardRefresh: hardRefresh
         )
+    }
+    
+    /// Downloads file and returns the local URL.
+    public func getFromRemote() -> Promise<URL> {
+        return Promise { fulfill, reject in
+            let task = self.downloadTask2
+            task.progressSignal.observe(
+                Signal<Double, Error>.Observer(
+//                    value: {val in},
+                    failed: {error in
+                        reject(error)
+                    },
+                    completed: {
+                        fulfill(self.localFile.url)
+                    }//,
+//                    interrupted: {}
+                )
+            )
+            _ = task.start()
+        }
     }
 }
 

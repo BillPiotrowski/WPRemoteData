@@ -7,7 +7,7 @@
 //
 
 import FirebaseFirestore
-import PromiseKit
+import Promises
 import SPCommon
 
 public struct WriteBatchScorepio {
@@ -65,14 +65,14 @@ extension WriteBatchScorepio {
 // MARK: COMMIT
 extension WriteBatchScorepio {
     public func commit() -> Promise<Void> {
-        return Promise { seal in
+        return Promise { fulfill, reject in
             batch.commit() { error in
                 guard let error = error
                     else {
-                        seal.fulfill(())
+                        fulfill(())
                         return
                 }
-                seal.reject(error)
+                reject(error)
             }
         }
     }

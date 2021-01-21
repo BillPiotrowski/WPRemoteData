@@ -40,7 +40,7 @@ public class RemoteDataDownloadTask<
         remoteDataDocument: RemoteDoc,
         hardRefresh: Bool? = nil
     ){
-        let hardRefresh = hardRefresh ?? NewGroupDownloadTask.defaultHardRefresh
+        let hardRefresh = hardRefresh ?? GroupDownloadTask.defaultHardRefresh
         let progress: Progress = Progress()
         progress.fileOperationKind = .downloading
         progress.totalUnitCount = Int64(1)
@@ -67,7 +67,7 @@ public class RemoteDataDownloadTask<
     }
 }
 
-extension RemoteDataDownloadTask: NewDownloadTaskProtocol where
+extension RemoteDataDownloadTask: DownloadTaskProtocol where
     RemoteDoc.Data == RemoteDoc.LocalDoc.O,
     RemoteDoc.Data.RemoteDoc == RemoteDoc,
     RemoteDoc.LocalDoc == RemoteDoc.LocalDoc.O.File,

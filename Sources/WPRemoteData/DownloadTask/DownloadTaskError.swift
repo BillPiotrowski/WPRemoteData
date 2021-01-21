@@ -8,12 +8,12 @@
 import Foundation
 import SPCommon
 
-enum DownloadTaskError {
+public enum DownloadTaskError {
     case userCancelled
     case alreadyFailed
 }
 extension DownloadTaskError: ScorepioError {
-    var message: String {
+    public var message: String {
         switch self {
         case .userCancelled: return "Download task cancelled."
         case .alreadyFailed: return "Download already failed. Please try again."

@@ -14,7 +14,8 @@ let package = Package(
         
         .library(
             name: "WPRemoteData",
-            targets: ["WPRemoteData"]),
+            targets: ["WPRemoteData"]
+        ),
     ],
     dependencies: [
         .package(
@@ -22,7 +23,10 @@ let package = Package(
             url: "https://github.com/firebase/firebase-ios-sdk.git",
             .branch("7.0-spm-beta")
         ),
-        .package(url: "https://github.com/mxcl/PromiseKit", from: "6.0.0"),
+//        .package(
+//            url: "https://github.com/mxcl/PromiseKit",
+//            from: "6.0.0"
+//        ),
         .package(
             name: "ReactiveSwift",
             url: "https://github.com/ReactiveCocoa/ReactiveSwift.git",
@@ -54,10 +58,10 @@ let package = Package(
                     name: "FirebaseFunctions",
                     package: "Firebase"
                 ),
-                .product(
-                    name: "PromiseKit",
-                    package: "PromiseKit"
-                ),
+//                .product(
+//                    name: "PromiseKit",
+//                    package: "PromiseKit"
+//                ),
                 .product(
                     name: "ReactiveSwift",
                     package: "ReactiveSwift"
@@ -79,6 +83,9 @@ let package = Package(
 //            dependencies: []),
         .testTarget(
             name: "WPRemoteDataTests",
-            dependencies: ["WPRemoteData"]),
+            dependencies: [
+                "WPRemoteData",
+            ]
+        ),
     ]
 )

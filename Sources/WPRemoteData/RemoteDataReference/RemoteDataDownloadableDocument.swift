@@ -6,7 +6,6 @@
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
 
-import PromiseKit
 import SPCommon
 import Promises
 import Foundation
@@ -78,7 +77,7 @@ extension RemoteDataDownloadableDocument where
     /// Unnecessary conformance to RemoteDownloadable.
     ///
     /// Would like to remove this in future.
-    public var downloadTaskProtocol: NewDownloadTaskProtocol {
+    public var downloadTaskProtocol: DownloadTaskProtocol {
         self.downloadTask
     }
     

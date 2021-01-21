@@ -123,7 +123,7 @@ extension DummyCollectionReference: QueryInterface {
         )
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            listener(nil, NSError(domain: "asdf", code: 2))
+            listener(nil, NSError(domain: "Default error for dummy snapshot listener showing a doc does not exist.", code: 2))
         }
         
         return firebaseListener

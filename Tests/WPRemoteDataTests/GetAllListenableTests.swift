@@ -19,7 +19,10 @@ final class GetAllListenableTests: XCTestCase {
     
     override func setUp() {
         ServerAppStarter.configure(
-            ServerAppStarter.Config(forTesting: true)
+            ServerAppStarter.Config(
+                forTesting: true,
+                testDataDictionaries: nil
+            )
         )
     }
     

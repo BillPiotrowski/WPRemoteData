@@ -14,7 +14,12 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
     
     // MARK: - SETUP
     override func setUpWithError() throws {
-        ServerAppStarter.configure(ServerAppStarter.Config(forTesting: true))
+        ServerAppStarter.configure(
+            ServerAppStarter.Config(
+                forTesting: true,
+                testDataDictionaries: nil
+            )
+        )
         self.expect = expectation(description: "Test")
     }
     
@@ -34,6 +39,21 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         try localFile3.delete()
     }
     
+    // MARK: - TEST EMPTY SEQUENTIAL
+    func testEmptyGroup(){
+        // 4 progress
+        // 4 progress
+        // complete
+        self.expect.expectedFulfillmentCount = 2
+        
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [],
+            hardRefresh: false
+        )
+        
+        self.assertSuccess(timeout: 2)
+    }
+    
     
     // MARK: - TEST 2 SIMPLE SUCCESS SEQUENTIAL
     func testTwoSimpleSuccessSeq(){
@@ -48,11 +68,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false
         )
         
@@ -77,17 +97,17 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
             testDataID: DummyDataDocID.quickSuccess.rawValue
         )
         
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
-        var subtask3: NewDownloadTaskProtocol? = remoteDoc.downloadTaskProtocol
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
+        let subtask3 = remoteDoc.downloadTaskProtocol
         
-        let subGroup: NewDownloadTaskProtocol = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask3!],
+        let subGroup: DownloadTaskProtocol = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask3],
             hardRefresh: false
         )
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subGroup, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subGroup, subtask2],
             hardRefresh: false
         )
         
@@ -112,17 +132,17 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
             testDataID: DummyDataDocID.quickSuccess.rawValue
         )
         
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
-        var subtask3: NewDownloadTaskProtocol? = remoteDoc.downloadTaskProtocol
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
+        let subtask3 = remoteDoc.downloadTaskProtocol
         
-        let subGroup: NewDownloadTaskProtocol = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask3!],
+        let subGroup: DownloadTaskProtocol = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask3],
             hardRefresh: false
         )
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subGroup, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subGroup, subtask2],
             hardRefresh: false
         )
         
@@ -148,18 +168,18 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
             testDataID: DummyDataDocID.quickSuccess.rawValue
         )
         
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
-        var subtask3: NewDownloadTaskProtocol? = remoteDoc.downloadTaskProtocol
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
+        let subtask3 = remoteDoc.downloadTaskProtocol
         
-        let subGroup: NewDownloadTaskProtocol = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask3!],
+        let subGroup: DownloadTaskProtocol = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask3],
             hardRefresh: false,
             downloadOrder: .parallel
         )
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subGroup, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subGroup, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )
@@ -204,18 +224,18 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
             testDataID: DummyDataDocID.quickSuccess.rawValue
         )
         
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
-        var subtask3: NewDownloadTaskProtocol? = remoteDoc.downloadTaskProtocol
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
+        let subtask3 = remoteDoc.downloadTaskProtocol
         
-        let subGroup: NewDownloadTaskProtocol = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask3!],
+        let subGroup: DownloadTaskProtocol = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask3],
             hardRefresh: false,
             downloadOrder: .parallel
         )
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subGroup, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subGroup, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )
@@ -259,12 +279,12 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
             testDataID: DummyDataDocID.quickSuccess.rawValue
         )
         
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
-        var subtask3: NewDownloadTaskProtocol? = remoteDoc.downloadTaskProtocol
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
+        let subtask3 = remoteDoc.downloadTaskProtocol
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!, subtask3!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2, subtask3],
             hardRefresh: false
         )
         
@@ -284,11 +304,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )
@@ -310,11 +330,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.error.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false
         )
         
@@ -334,11 +354,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.error.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false
         )
         
@@ -359,11 +379,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.error.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )
@@ -386,11 +406,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.error.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )
@@ -413,11 +433,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.error.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false
         )
         
@@ -438,11 +458,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.error.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )
@@ -464,11 +484,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false
         )
         
@@ -496,11 +516,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )
@@ -539,11 +559,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess2.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false
         )
         
@@ -576,11 +596,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.simpleSuccess2.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )
@@ -614,11 +634,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: true
         )
         
@@ -648,11 +668,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: true,
             downloadOrder: .parallel
         )
@@ -684,11 +704,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false
         )
         
@@ -714,11 +734,11 @@ final class GroupDownloadExpectationTests: DownloadTaskTests {
         let remoteFile2 = DummyRemoteFile(
             dummyID: TestRemoteFileName.quickSuccess.rawValue
         )
-        var subtask1: NewDownloadTaskProtocol? = remoteFile1.downloadTask2
-        var subtask2: NewDownloadTaskProtocol? = remoteFile2.downloadTask2
+        let subtask1 = remoteFile1.downloadTask2
+        let subtask2 = remoteFile2.downloadTask2
         
-        self.downloadTask = NewGroupDownloadTask(
-            downloadTasks: [subtask1!, subtask2!],
+        self.downloadTask = GroupDownloadTask(
+            downloadTasks: [subtask1, subtask2],
             hardRefresh: false,
             downloadOrder: .parallel
         )

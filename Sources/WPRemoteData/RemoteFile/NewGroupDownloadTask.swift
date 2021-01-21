@@ -8,8 +8,8 @@
 import Foundation
 import ReactiveSwift
 
-class NewGroupDownloadTask {
-    private let subtasks: [NewDownloadTaskProtocol]
+public class GroupDownloadTask {
+    private let subtasks: [DownloadTaskProtocol]
     
     public let stateProperty: Property<NewDownloadTaskState>
     private let stateInput: Signal<NewDownloadTaskState, Never>.Observer
@@ -17,7 +17,7 @@ class NewGroupDownloadTask {
     private let progressInput: Signal<Double, Error>.Observer
     
     private let lifecycleDisposable = CompositeDisposable()
-    let progress: Progress
+    public let progress: Progress
     public var hardRefresh: Bool
     
     let downloadOrder: DownloadOrder
@@ -26,8 +26,8 @@ class NewGroupDownloadTask {
 //
 //    var interruptableInput: (Signal<Double, Error>.Observer)?
     
-    init(
-        downloadTasks: [NewDownloadTaskProtocol],
+    public init(
+        downloadTasks: [DownloadTaskProtocol],
         hardRefresh: Bool? = nil,
         downloadOrder: DownloadOrder? = nil
     ){
@@ -35,7 +35,10 @@ class NewGroupDownloadTask {
         let downloadOrder = downloadOrder ?? Self.downloadOrderDefault
         let progress: Progress = Progress()
         progress.fileOperationKind = .downloading
-        progress.totalUnitCount = Int64(downloadTasks.count * 100)
+        // Sets progress totalUnitCount to 100 per subtask.
+        // Sets totalUnitCount to 1 if there are no subtasks.
+        // If this catch was not there, the total progress would be zero, which will not calculate correctly when start() is called.
+        progress.totalUnitCount = (downloadTasks.count > 0) ?  Int64(downloadTasks.count * 100) : 1
         
         let initialState = NewDownloadTaskState.initialized
         
@@ -53,7 +56,10 @@ class NewGroupDownloadTask {
         }
         
         // Send subtask signals into the master signal pipe.
-        subtaskStateSignal.observe(signalPipe.input)
+        // If there are 0 subtasks, the signal would automatically complete during init. Adding guard here so that the autocomplete will happen when started.
+        if downloadTasks.count > 0 {
+            subtaskStateSignal.observe(signalPipe.input)
+        }
         
         // Send all subtask signals into subtask pipe and complete it.
         for task in downloadTasks {
@@ -76,7 +82,7 @@ class NewGroupDownloadTask {
                 task.hardRefresh = hardRefresh
             }
         }
-        let hardRefresh = hardRefresh ?? NewGroupDownloadTask.defaultHardRefresh
+        let hardRefresh = hardRefresh ?? GroupDownloadTask.defaultHardRefresh
         
         
         self.progress = progress
@@ -104,9 +110,9 @@ class NewGroupDownloadTask {
 }
  
 // MARK: - START
-extension NewGroupDownloadTask: NewDownloadTaskProtocol {
+extension GroupDownloadTask: DownloadTaskProtocol {
     
-    func start() -> SignalProducer<Double, Error> {
+    public func start() -> SignalProducer<Double, Error> {
         guard !self.isTerminated else {
             return self.progressSignalProducer
         }
@@ -115,6 +121,8 @@ extension NewGroupDownloadTask: NewDownloadTaskProtocol {
             self.state = .complete
             return self.progressSignalProducer
         }
+        
+        // ADD A GUARD TO ENSURE THAT IT IS NOT ALREADY LOADING!
         
         self.state = .loading
         
@@ -131,7 +139,7 @@ extension NewGroupDownloadTask: NewDownloadTaskProtocol {
 }
 
 // MARK: - PARALLEL
-extension NewGroupDownloadTask {
+extension GroupDownloadTask {
     
     /// Begins all subtasks
     private func startParallel() {
@@ -142,7 +150,7 @@ extension NewGroupDownloadTask {
 }
  
 // MARK: - SEQUENTIAL
-extension NewGroupDownloadTask {
+extension GroupDownloadTask {
     
     /// Escaping recursive function that starts the next task and when it completes calls itself to begin the next task.
     private func startNextTask() throws {
@@ -157,16 +165,16 @@ extension NewGroupDownloadTask {
     }
     
     /// Returns the first task that is not complete.
-    private var nextTask: NewDownloadTaskProtocol? {
+    private var nextTask: DownloadTaskProtocol? {
         subtasks.first { !$0.isComplete }
     }
     
 }
 
 // MARK: - COMPUTED VARS
-extension NewGroupDownloadTask {
+extension GroupDownloadTask {
     
-    var isLocal: Bool {
+    public var isLocal: Bool {
         for task in subtasks {
             guard task.isLocal
             else { return false }
@@ -182,7 +190,7 @@ extension NewGroupDownloadTask {
         return true
     }
     
-    func attemptPause() {
+    public func attemptPause() {
         self.state = .paused
         for task in subtasks {
             task.attemptPause()
@@ -190,7 +198,7 @@ extension NewGroupDownloadTask {
     }
     
     
-    func attemptCancel() {
+    public func attemptCancel() {
         self.state = .failure(error: DownloadTaskError.userCancelled)
         for task in subtasks {
             task.attemptCancel()
@@ -216,7 +224,7 @@ extension NewGroupDownloadTask {
     }
     
     
-    enum DownloadOrder {
+    public enum DownloadOrder {
         case parallel, sequential
     }
 }

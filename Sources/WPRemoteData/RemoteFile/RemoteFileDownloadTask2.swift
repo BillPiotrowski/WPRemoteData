@@ -9,7 +9,7 @@ import Foundation
 import SPCommon
 import ReactiveSwift
 
-class NewDownloadTask: NewDownloadTaskProtocol {
+public class RemoteFileDownloadTask: DownloadTaskProtocol {
     
     private let remoteFile: RemoteFileProtocol
     public var hardRefresh: Bool
@@ -28,7 +28,6 @@ class NewDownloadTask: NewDownloadTaskProtocol {
                 childProgress,
                 withPendingUnitCount: 1
             )
-            
         }
     }
     
@@ -89,9 +88,9 @@ class NewDownloadTask: NewDownloadTaskProtocol {
 }
 
 // MARK: - PUBLIC METHODS
-extension NewDownloadTask {
+extension RemoteFileDownloadTask {
     
-    func start() -> SignalProducer<Double, Error> {
+    public func start() -> SignalProducer<Double, Error> {
         guard !self.isTerminated else {
             return self.progressSignalProducer
         }
@@ -112,12 +111,12 @@ extension NewDownloadTask {
         return self.progressSignalProducer
     }
     
-    func attemptCancel(){
+    public func attemptCancel(){
         self.state = .failure(error: DownloadTaskError.userCancelled)
         self.storageDownloadTask?.cancel()
     }
     
-    func attemptPause(){
+    public func attemptPause(){
         self.state = .paused
         self.storageDownloadTask?.pause()
     }
@@ -126,7 +125,7 @@ extension NewDownloadTask {
 
 
 // MARK: - CREATE / RESUME HELPERS
-extension NewDownloadTask {
+extension RemoteFileDownloadTask {
     
     /// Creates new download task and sets it at the class variable.
     ///
@@ -148,7 +147,7 @@ extension NewDownloadTask {
 
 
 // MARK: - COMPUTED VARS
-extension NewDownloadTask {
+extension RemoteFileDownloadTask {
     
     /// Gets and sets the state property. When set to complete or error, the progress signal is completed or failed respectively.
     public private (set) var state: NewDownloadTaskState {
@@ -175,14 +174,14 @@ extension NewDownloadTask {
         return remoteFile.localFile
     }
     
-    var isLocal: Bool {
+    public var isLocal: Bool {
         return localFile.exists
     }
 }
 
 
 // MARK: - OBSERVATIONS
-extension NewDownloadTask {
+extension RemoteFileDownloadTask {
     private func setObservations(
         downloadTask: StorageDownloadTaskInterface
     ){
@@ -216,6 +215,12 @@ extension NewDownloadTask {
             if childProgress == nil {
                 childProgress = progress
             }
+            
+            // Firebase does not maintain the same exact Progress, so manually updating.
+            // Might make sure nothing on my end is causing the Progress to change exact copy, but I don't think so.
+            self.childProgress?.completedUnitCount = progress.completedUnitCount
+//            self.childProgress?.totalUnitCount = progress.totalUnitCount
+            
             self.progressInput.send(value: progress.fractionCompleted)
             
         case .resume: break

@@ -14,7 +14,12 @@ final class RemoteFileDownloadTaskExpectationTests: DownloadTaskTests {
     
     // MARK: - SETUP
     override func setUpWithError() throws {
-        ServerAppStarter.configure(ServerAppStarter.Config(forTesting: true))
+        ServerAppStarter.configure(
+            ServerAppStarter.Config(
+                forTesting: true,
+                testDataDictionaries: nil
+            )
+        )
         self.expect = expectation(description: "Test")
     }
     

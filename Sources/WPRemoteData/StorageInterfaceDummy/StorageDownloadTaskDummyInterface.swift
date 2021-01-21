@@ -204,7 +204,7 @@ class DummyErrorDownloadTask: DummyStorageDownloadTask {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             guard self.runningSessionID == sessionID else { return }
-            self.sendError(error: NSError(domain: "asdf", code: 4))
+            self.sendError(error: NSError(domain: "dummy doc does not exist error.", code: 4))
         }
     }
 }

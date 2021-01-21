@@ -8,7 +8,7 @@
 import Foundation
 import ReactiveSwift
 
-public protocol NewDownloadTaskProtocol: class {
+public protocol DownloadTaskProtocol: class {
     
 //    var hardRefresh: Bool { get }
     
@@ -62,7 +62,7 @@ public protocol NewDownloadTaskProtocol: class {
     /// Currently only has an affect at init or when a parent task is initialized. In future can change this so that there is a didSet { } method, but seems unneccessary right now.
     var hardRefresh: Bool { get set }
 }
-extension NewDownloadTaskProtocol {
+extension DownloadTaskProtocol {
     public static var defaultHardRefresh: Bool {
         false
     }
@@ -76,7 +76,7 @@ extension NewDownloadTaskProtocol {
 }
 
 // MARK: - PROGRESS SIGNAL PRODUCER
-extension NewDownloadTaskProtocol {
+extension DownloadTaskProtocol {
     
     /// A SignalProducer representing the download task's progress.
     ///

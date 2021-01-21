@@ -8,7 +8,7 @@
 
 import SPCommon
 import FirebaseFunctions
-import PromiseKit
+import Promises
 
 struct Dummy: _Data {
     var dictionary: [String : Any] = [:]
@@ -73,16 +73,16 @@ extension FirebaseFunctionProtocol {
 // MARK: CALL PROMISE
 extension FirebaseFunctionProtocol {
     func call() -> Promise<Any>{
-        return Promise { seal in
+        return Promise { fulfill, reject in
             httpCallable.call(
                 input.dictionary
             ){ (result, error) in
                 guard let data = result?.data
                     else {
-                        seal.reject(error ?? FirebaseFunctionError2.missingReturnData)
+                        reject(error ?? FirebaseFunctionError2.missingReturnData)
                         return
                 }
-                seal.fulfill(data)
+                fulfill(data)
             }
         }
     }

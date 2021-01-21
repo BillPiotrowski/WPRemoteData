@@ -6,7 +6,6 @@
 //  Copyright © 2020 William Piotrowski. All rights reserved.
 //
 
-import PromiseKit
 import ReactiveSwift
 import Firebase
 import SPCommon

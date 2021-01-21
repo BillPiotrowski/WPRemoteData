@@ -8,7 +8,6 @@
 
 import SPCommon
 import FirebaseFirestore
-import PromiseKit
 import ReactiveSwift
 import Promises
 
