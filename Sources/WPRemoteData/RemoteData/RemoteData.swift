@@ -55,6 +55,16 @@ extension RemoteData where
 
 
 
+extension RemoteData where
+    Self.RemoteDoc: GettableRemoteDataDocument,
+    Self.RemoteDoc.Data == Self
+{
+    public func delete() -> Promise<Void>{
+        self.remoteDocument.delete()
+    }
+}
+
+
 
 
 

@@ -21,7 +21,12 @@ public protocol DocumentReferenceInterface {
         _ listener: @escaping (DocumentSnapshotInterface?, Error?)-> Void
     ) -> ListenerRegistrationInterface
     
-    func setData(_ documentData: [String: Any], completion: ((Error?) -> Void)?)
+    func setData(
+        _ documentData: [String: Any],
+        completion: ((Error?) -> Void)?
+    )
+    
+    func delete(completion: ((Error?) -> Void)?)
 }
 
 // MARK: -

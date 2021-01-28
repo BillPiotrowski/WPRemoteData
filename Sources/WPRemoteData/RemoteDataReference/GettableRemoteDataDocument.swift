@@ -36,8 +36,7 @@ extension GettableRemoteDataDocument {
 }
 
 
-extension RemoteDataDocument where
-    Self: GettableRemoteDataDocument,
+extension GettableRemoteDataDocument where
     Self.Data.RemoteDoc == Self
 {
     
@@ -81,6 +80,11 @@ extension RemoteDataDocument where
             }
         }
         return (disposable, mappedSignal)
+    }
+    
+    // MARK: - DELETE
+    public func delete() -> Promise<Void>{
+        self.documentReference.delete()
     }
     
     

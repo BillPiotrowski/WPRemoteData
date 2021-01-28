@@ -73,3 +73,19 @@ extension DocumentReferenceInterface {
         }
     }
 }
+
+// MARK: - DELETE
+extension DocumentReferenceInterface {
+    func delete() -> Promise<Void>{
+        Promise { fulfill, reject in
+            self.delete(){
+                guard let error = $0
+                else {
+                    fulfill(())
+                    return
+                }
+                reject(error)
+            }
+        }
+    }
+}
