@@ -35,6 +35,11 @@ extension DummyDocumentReference: DocumentReferenceInterface {
         return "\(collectionReference.path)/\(relativePath)"
     }
     
+    func delete(completion: ((Error?) -> Void)?) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            completion?(nil)
+        }
+    }
     
     func addSnapshotListenerInterface(
         _ listener: @escaping (DocumentSnapshotInterface?, Error?) -> Void
