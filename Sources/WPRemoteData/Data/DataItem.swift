@@ -28,4 +28,8 @@ extension RemoteDataItem {
         pathArray.append(name)
         return pathArray
     }
+    /// For testing
+    internal var relativePath: String {
+        pathArray.joined(separator: "/")
+    }
 }
