@@ -26,3 +26,23 @@ extension RemoteDataLocation where
         return staticChild1.get()
     }
 }
+
+
+
+
+
+public protocol RemoteDataLocationStaticChild2: RemoteDataLocation {
+    associatedtype Static2: RemoteDataStaticReference
+    var staticChild2: Static2 { get }
+}
+
+extension RemoteDataLocation where
+    Self: RemoteDataLocationStaticChild2,
+    Self == Static2.Location,
+    Static2 == Static2.Data.RemoteDoc
+{
+    public func getChild2(
+    ) -> Promise<ScorepioDocumentResponse<Static2,Static2.Data>> {
+        return staticChild2.get()
+    }
+}
